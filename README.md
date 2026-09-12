@@ -55,6 +55,7 @@ game's own text field:
 - **A**: confirms the current letter and moves to the next position
 - **B**: deletes the last confirmed letter
 - **Start**: confirms the whole text entry (Enter)
+- **Menu Key (Function)**: menu/return/exit (Esc)
 
 ## Installation
 
