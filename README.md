@@ -67,7 +67,7 @@ game's own text field:
    - `CRITTER.DAT`
    - the `data/` folder
    - `fallout.cfg` (if included with your installation)
-4. On the device, open the **Ports** menu — "Fallout" should appear in the list.
+4. On the device, open the **Ports** menu — "Fallout" should appear in the list. If not, use "refresh roms" at the bottom of the ports list. 
 
 ## Building from source
 
