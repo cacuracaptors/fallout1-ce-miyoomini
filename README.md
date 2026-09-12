@@ -39,6 +39,7 @@ files yourself. See [Installation](#installation) below.
 | R2 | Switch active item's mode | Center screen on player |
 | Start | Enter / confirm | — |
 | Select | (modifier) | — |
+| Menu Key (Function) | Esc / Menu/Return/Exit | — |
 
 Quicksave and Quickload have a short cooldown after firing (to avoid the underlying hardware's
 key-repeat behavior from spamming save/load repeatedly). All other Select-combo actions can be
@@ -55,7 +56,7 @@ game's own text field:
 - **A**: confirms the current letter and moves to the next position
 - **B**: deletes the last confirmed letter
 - **Start**: confirms the whole text entry (Enter)
-- **Menu Key (Function)**: menu/return/exit (Esc)
+- **Menu Key (Function)**: cancels the whole text entry  (Esc)
 
 ## Installation
 
