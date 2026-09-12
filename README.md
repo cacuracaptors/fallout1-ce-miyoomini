@@ -61,16 +61,13 @@ game's own text field:
 ## Installation
 
 1. Download the latest `.zip` from the [Releases](../../releases) tab of this repository.
-2. Extract its contents to `Roms/PORTS/Games/Fallout/` on your OnionOS SD card.
-3. Copy the following files from your legitimate Fallout installation (GOG/Steam) into that same
-   folder:
+2. Extract its contents to the root of your OnionOS SD card.
+3. Copy the following files from your legitimate Fallout installation (GOG/Steam) into `Roms/PORTS/Games/Fallout/`:
    - `MASTER.DAT`
    - `CRITTER.DAT`
    - the `data/` folder
    - `fallout.cfg` (if included with your installation)
-4. Copy the `Fallout.port` file (also included in the `.zip`) to `Roms/PORTS/Shortcuts/` on the
-   SD card.
-5. On the device, open the **Ports** menu — "Fallout" should appear in the list.
+4. On the device, open the **Ports** menu — "Fallout" should appear in the list.
 
 ## Building from source
 
