@@ -99,7 +99,7 @@ static void _nfPkDecomp(unsigned char* buf, unsigned char* a2, int a3, int a4, i
 
 static constexpr uint16_t loadUInt16LE(const uint8_t* b);
 static constexpr uint32_t loadUInt32LE(const uint8_t* b);
-static uint8_t getOffset(uint16_t v);
+static int getOffset(uint16_t v);
 
 // 0x51EBD8
 static int dword_51EBD8 = 0;
@@ -1199,6 +1199,14 @@ static void _MVE_sndSync()
     }
 
     while (1) {
+        {
+            static int syncWatchdogCounter = 0;
+            syncWatchdogCounter++;
+            if (syncWatchdogCounter > 200) {
+                syncWatchdogCounter = 0;
+                break;
+            }
+        }
         if (!audioEngineSoundBufferGetStatus(gMveSoundBuffer, &dwStatus)) {
             return;
         }
@@ -2802,7 +2810,7 @@ constexpr uint32_t loadUInt32LE(const uint8_t* b)
     return (b[3] << 24) | (b[2] << 16) | (b[1] << 8) | b[0];
 }
 
-uint8_t getOffset(uint16_t v)
+int getOffset(uint16_t v)
 {
     return static_cast<int8_t>(v & 0xFF) + dword_51F018[v >> 8];
 }

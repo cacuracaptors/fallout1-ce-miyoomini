@@ -95,6 +95,77 @@ static bool game_paused;
 // 0x671EE4
 static int screendump_key;
 
+// BEGIN Miyoo Mini key debounce patch
+static bool gMiyooKeyDownState[SDL_NUM_SCANCODES] = { false };
+static Uint32 gMiyooLastFireTime[SDL_NUM_SCANCODES] = { 0 };
+static bool gMiyooArrowForwardedDown[SDL_NUM_SCANCODES] = { false };
+// END Miyoo Mini key debounce patch
+
+// BEGIN Miyoo Mini virtual keyboard patch
+static bool gMiyooTextInputActive = false;
+static int gMiyooCycleIndex = 0;
+static bool gMiyooCyclePreviewShown = false;
+static const char gMiyooCharset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ";
+
+static int miyooCharsetLen()
+{
+    int len = 0;
+    while (gMiyooCharset[len] != '\0') {
+        len++;
+    }
+    return len;
+}
+
+static SDL_Scancode miyooCharToScancode(char c)
+{
+    if (c >= 'A' && c <= 'Z') {
+        return (SDL_Scancode)(SDL_SCANCODE_A + (c - 'A'));
+    }
+    if (c >= '1' && c <= '9') {
+        return (SDL_Scancode)(SDL_SCANCODE_1 + (c - '1'));
+    }
+    if (c == '0') {
+        return SDL_SCANCODE_0;
+    }
+    return SDL_SCANCODE_SPACE;
+}
+
+static void miyooSendSyntheticKey(SDL_Scancode code)
+{
+    KeyboardData kd;
+    kd.key = code;
+    kd.down = true;
+    GNW95_process_key(&kd);
+    // NOTE: GNW95_process_key mutates data->key in place (remaps it), so we
+    // must reset it before the second call, or the "up" event gets recorded
+    // against the wrong (already-remapped) key, leaving the original key
+    // permanently stuck in the engine's auto-repeat system.
+    kd.key = code;
+    kd.down = false;
+    GNW95_process_key(&kd);
+}
+
+static bool gMiyooLowercase = false;
+
+static void miyooSendLetterWithCase(char c)
+{
+    bool useShift = !gMiyooLowercase;
+    if (useShift) {
+        KeyboardData kd;
+        kd.key = SDL_SCANCODE_LSHIFT;
+        kd.down = true;
+        GNW95_process_key(&kd);
+    }
+    miyooSendSyntheticKey(miyooCharToScancode(c));
+    if (useShift) {
+        KeyboardData kd;
+        kd.key = SDL_SCANCODE_LSHIFT;
+        kd.down = false;
+        GNW95_process_key(&kd);
+    }
+}
+// END Miyoo Mini virtual keyboard patch
+
 // 0x671EE8
 static int using_msec_timer;
 
@@ -1107,9 +1178,192 @@ void GNW95_process_message()
         case SDL_KEYDOWN:
         case SDL_KEYUP:
             if (!kb_is_disabled()) {
-                keyboardData.key = e.key.keysym.scancode;
-                keyboardData.down = (e.key.state & SDL_PRESSED) != 0;
-                GNW95_process_key(&keyboardData);
+                SDL_Scancode sc = e.key.keysym.scancode;
+                bool isDown = (e.key.state == SDL_PRESSED);
+                bool wasKeyDown = gMiyooKeyDownState[sc];
+                gMiyooKeyDownState[sc] = isDown;
+                bool isPhysicalRepeat = isDown && wasKeyDown;
+
+                if (!isPhysicalRepeat) {
+                bool isArrowKey = (sc == SDL_SCANCODE_LEFT || sc == SDL_SCANCODE_RIGHT
+                    || sc == SDL_SCANCODE_UP || sc == SDL_SCANCODE_DOWN);
+                if (!isDown && isArrowKey && gMiyooArrowForwardedDown[sc]) {
+                    // We previously told the engine this arrow was pressed
+                    // (while Select was held). Always deliver the matching
+                    // release now, even if Select has since been let go -
+                    // otherwise the engine's own auto-repeat for this key
+                    // never gets cleared and it scrolls forever.
+                    keyboardData.key = sc;
+                    keyboardData.down = false;
+                    GNW95_process_key(&keyboardData);
+                    gMiyooArrowForwardedDown[sc] = false;
+                } else if (!isDown && sc == SDL_SCANCODE_RCTRL) {
+                    // Select was released - stop any camera scroll that is
+                    // still active even if the D-pad direction is still
+                    // physically held (D-pad has no scroll meaning without
+                    // Select, so there is nothing to hand it off to).
+                    static const SDL_Scancode arrowScancodes[4] = {
+                        SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_UP, SDL_SCANCODE_DOWN
+                    };
+                    for (int i = 0; i < 4; i++) {
+                        SDL_Scancode arrowSc = arrowScancodes[i];
+                        if (gMiyooArrowForwardedDown[arrowSc]) {
+                            keyboardData.key = arrowSc;
+                            keyboardData.down = false;
+                            GNW95_process_key(&keyboardData);
+                            gMiyooArrowForwardedDown[arrowSc] = false;
+                        }
+                    }
+                } else
+                if (gMiyooTextInputActive) {
+                    bool handled = false;
+                    if (isDown) {
+                        if (sc == SDL_SCANCODE_UP || sc == SDL_SCANCODE_DOWN) {
+                            if (gMiyooCyclePreviewShown) {
+                                miyooSendSyntheticKey(SDL_SCANCODE_BACKSPACE);
+                            }
+                            int len = miyooCharsetLen();
+                            if (sc == SDL_SCANCODE_UP) {
+                                gMiyooCycleIndex = (gMiyooCycleIndex + 1) % len;
+                            } else {
+                                gMiyooCycleIndex = (gMiyooCycleIndex - 1 + len) % len;
+                            }
+                            miyooSendLetterWithCase(gMiyooCharset[gMiyooCycleIndex]);
+                            gMiyooCyclePreviewShown = true;
+                            handled = true;
+                        } else if (sc == SDL_SCANCODE_LEFT) {
+                            gMiyooLowercase = !gMiyooLowercase;
+                            if (gMiyooCyclePreviewShown) {
+                                miyooSendSyntheticKey(SDL_SCANCODE_BACKSPACE);
+                                miyooSendLetterWithCase(gMiyooCharset[gMiyooCycleIndex]);
+                            }
+                            handled = true;
+                        } else if (sc == SDL_SCANCODE_RIGHT) {
+                            if (gMiyooCyclePreviewShown) {
+                                miyooSendSyntheticKey(SDL_SCANCODE_BACKSPACE);
+                            }
+                            miyooSendSyntheticKey(SDL_SCANCODE_SPACE);
+                            gMiyooCyclePreviewShown = false;
+                            gMiyooCycleIndex = 0;
+                            handled = true;
+                        } else if (sc == SDL_SCANCODE_SPACE) {
+                            gMiyooCyclePreviewShown = false;
+                            gMiyooCycleIndex = 0;
+                            handled = true;
+                        } else if (sc == SDL_SCANCODE_LCTRL) {
+                            if (gMiyooCyclePreviewShown) {
+                                miyooSendSyntheticKey(SDL_SCANCODE_BACKSPACE);
+                                gMiyooCyclePreviewShown = false;
+                            }
+                            miyooSendSyntheticKey(SDL_SCANCODE_BACKSPACE);
+                            handled = true;
+                        }
+                    }
+                    if (!handled) {
+                        keyboardData.key = sc;
+                        keyboardData.down = isDown;
+                        GNW95_process_key(&keyboardData);
+                    }
+                    break;
+                }
+
+                const Uint8* liveKeys = SDL_GetKeyboardState(NULL);
+                bool selectHeld = liveKeys[SDL_SCANCODE_RCTRL] != 0;
+                bool suppress = false;
+                SDL_Scancode remapped = sc;
+
+                if (!selectHeld) {
+                    switch (sc) {
+                    case SDL_SCANCODE_LEFT:
+                    case SDL_SCANCODE_RIGHT:
+                    case SDL_SCANCODE_UP:
+                    case SDL_SCANCODE_DOWN:
+                    case SDL_SCANCODE_E:
+                    case SDL_SCANCODE_T:
+                    case SDL_SCANCODE_LSHIFT:
+                        suppress = true;
+                        break;
+                    case SDL_SCANCODE_SPACE:
+                        remapped = SDL_SCANCODE_A;
+                        break;
+                    case SDL_SCANCODE_LCTRL:
+                        remapped = SDL_SCANCODE_SPACE;
+                        break;
+                    case SDL_SCANCODE_LALT:
+                        remapped = SDL_SCANCODE_RETURN;
+                        break;
+                    case SDL_SCANCODE_TAB:
+                        remapped = SDL_SCANCODE_B;
+                        break;
+                    case SDL_SCANCODE_BACKSPACE:
+                        remapped = SDL_SCANCODE_N;
+                        break;
+                    default:
+                        break;
+                    }
+                } else {
+                    switch (sc) {
+                    case SDL_SCANCODE_RCTRL:
+                        suppress = true;
+                        break;
+                    case SDL_SCANCODE_SPACE:
+                        remapped = SDL_SCANCODE_S;
+                        break;
+                    case SDL_SCANCODE_LCTRL:
+                        remapped = SDL_SCANCODE_C;
+                        break;
+                    case SDL_SCANCODE_LSHIFT:
+                        remapped = SDL_SCANCODE_I;
+                        break;
+                    case SDL_SCANCODE_LALT:
+                        remapped = SDL_SCANCODE_P;
+                        break;
+                    case SDL_SCANCODE_E:
+                        remapped = SDL_SCANCODE_F7;
+                        break;
+                    case SDL_SCANCODE_T:
+                        remapped = SDL_SCANCODE_F6;
+                        break;
+                    case SDL_SCANCODE_BACKSPACE:
+                        remapped = SDL_SCANCODE_HOME;
+                        break;
+                    case SDL_SCANCODE_TAB:
+                    case SDL_SCANCODE_LEFT:
+                    case SDL_SCANCODE_RIGHT:
+                    case SDL_SCANCODE_UP:
+                    case SDL_SCANCODE_DOWN:
+                        remapped = sc;
+                        break;
+                    default:
+                        break;
+                    }
+                }
+
+                if (!suppress) {
+                    bool isContinuousArrow = (sc == SDL_SCANCODE_LEFT || sc == SDL_SCANCODE_RIGHT
+                        || sc == SDL_SCANCODE_UP || sc == SDL_SCANCODE_DOWN);
+                    if (selectHeld && !isContinuousArrow) {
+                        if (isDown) {
+                            Uint32 cooldownMs = (sc == SDL_SCANCODE_E || sc == SDL_SCANCODE_T) ? 7000 : 400;
+                            Uint32 nowMs = SDL_GetTicks();
+                            if (nowMs - gMiyooLastFireTime[sc] >= cooldownMs) {
+                                gMiyooLastFireTime[sc] = nowMs;
+                                miyooSendSyntheticKey(remapped);
+                            }
+                        }
+                        // keyup events for momentary select-combo actions are
+                        // intentionally ignored - the synthetic press+release
+                        // above already completed the whole action instantly.
+                    } else {
+                        keyboardData.key = remapped;
+                        keyboardData.down = (e.key.state & SDL_PRESSED) != 0;
+                        GNW95_process_key(&keyboardData);
+                        if (isContinuousArrow) {
+                            gMiyooArrowForwardedDown[sc] = keyboardData.down;
+                        }
+                    }
+                }
+                } // end if (!isPhysicalRepeat)
             }
             break;
         case SDL_WINDOWEVENT:
@@ -1148,6 +1402,21 @@ void GNW95_process_message()
             GNW95RepeatStruct* ptr = &(GNW95_key_time_stamps[key]);
             if (ptr->time != -1) {
                 unsigned int elapsedTime = ptr->time > tick ? INT_MAX : tick - ptr->time;
+
+                // Miyoo Mini watchdog: this hardware's input driver can
+                // occasionally fail to deliver a matching key-up event,
+                // leaving a key stuck in a permanent auto-repeat loop
+                // (visible as e.g. the D-pad scroll never stopping).
+                // Force a real release if a key has been held for an
+                // unreasonably long time.
+                if (elapsedTime > 3000) {
+                    keyboardData.key = key;
+                    keyboardData.down = 0;
+                    GNW95_process_key(&keyboardData);
+                    ptr->time = -1;
+                    continue;
+                }
+
                 unsigned int delay = ptr->count == 0 ? GNW95_repeat_delay : GNW95_repeat_rate;
                 if (elapsedTime > delay) {
                     keyboardData.key = key;
@@ -1230,11 +1499,16 @@ static void idleImpl()
 void beginTextInput()
 {
     SDL_StartTextInput();
+    gMiyooTextInputActive = true;
+    gMiyooCycleIndex = 0;
+    gMiyooCyclePreviewShown = false;
+    gMiyooLowercase = false;
 }
 
 void endTextInput()
 {
     SDL_StopTextInput();
+    gMiyooTextInputActive = false;
 }
 
 } // namespace fallout
