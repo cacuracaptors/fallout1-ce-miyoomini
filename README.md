@@ -7,6 +7,8 @@ re-implementation of the original Fallout) to run as a standalone OnionOS Port o
 Built on top of the work of [Alexander Batalov](https://github.com/alexbatalov/fallout1-ce) and
 the SDL2 port for this hardware by [steward-fu](https://github.com/steward-fu/sdl2).
 
+For Fallout 2, check https://github.com/cacuracaptors/fallout2-ce-miyoomini.
+
 ## ⚠️ You need your own game files
 
 This repository does **not** include and will **never** include the Fallout data files
@@ -39,6 +41,7 @@ files yourself. See [Installation](#installation) below.
 | R2 | Switch active item's mode | Center screen on player |
 | Start | Enter / confirm | — |
 | Select | (modifier) | — |
+| Menu Key (Function) | Esc / Menu/Return/Exit | — |
 
 Quicksave and Quickload have a short cooldown after firing (to avoid the underlying hardware's
 key-repeat behavior from spamming save/load repeatedly). All other Select-combo actions can be
@@ -55,20 +58,18 @@ game's own text field:
 - **A**: confirms the current letter and moves to the next position
 - **B**: deletes the last confirmed letter
 - **Start**: confirms the whole text entry (Enter)
+- **Menu Key (Function)**: cancels the whole text entry  (Esc)
 
 ## Installation
 
 1. Download the latest `.zip` from the [Releases](../../releases) tab of this repository.
-2. Extract its contents to `Roms/PORTS/Games/Fallout/` on your OnionOS SD card.
-3. Copy the following files from your legitimate Fallout installation (GOG/Steam) into that same
-   folder:
+2. Extract its contents to the root of your OnionOS SD card.
+3. Copy the following files from your legitimate Fallout installation (GOG/Steam) into `Roms/PORTS/Games/Fallout/`:
    - `MASTER.DAT`
    - `CRITTER.DAT`
    - the `data/` folder
    - `fallout.cfg` (if included with your installation)
-4. Copy the `Fallout.port` file (also included in the `.zip`) to `Roms/PORTS/Shortcuts/` on the
-   SD card.
-5. On the device, open the **Ports** menu — "Fallout" should appear in the list.
+4. On the device, open the **Ports** menu — "Fallout" should appear in the list. If not, use "refresh roms" at the bottom of the list. 
 
 ## Building from source
 
