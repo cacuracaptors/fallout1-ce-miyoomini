@@ -18,6 +18,7 @@ files yourself. See [Installation](#installation) below.
 
 ## Features
 
+- Runs at full speed, no overclock needed
 - Software rendering (the Miyoo Mini Plus has no 3D GPU)
 - A full control scheme adapted for the Miyoo Mini Plus' hardware, which has no analog sticks
   (see [Controls](#controls))
