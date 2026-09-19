@@ -142,10 +142,6 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
 
 ## Known issues
 
-- **Audio has a noticeable, constant latency** (roughly consistent regardless of CPU clock
-  speed). Extensive profiling traced this to the underlying MI_AO (SigmaStar audio output)
-  driver call taking longer than expected — a closed-source binary blob we don't have source
-  access to. We were unable to fully resolve this; contributions welcome.
 - Intro/cutscene videos don't stretch to fill the screen (they render at their original
   resolution, centered) — the same behavior is present in the Portmaster version of this port,
   so it appears to be an inherited limitation of the original engine rather than something
