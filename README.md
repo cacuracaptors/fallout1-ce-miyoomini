@@ -83,6 +83,24 @@ game's own text field:
    - `fallout.cfg` (if included with your installation)
 4. On the device, open the **Ports** menu — "Fallout" should appear in the list. If not, use "refresh roms" at the bottom of the list. 
 
+## Known issues
+
+- Intro/cutscene videos don't stretch to fill the screen (they render at their original
+  resolution, centered) — the same behavior is present in the Portmaster version of this port,
+  so it appears to be an inherited limitation of the original engine rather than something
+  specific to this port.
+- The mouse cursor moves noticeably slower on screens with an open text field (character
+  creation, save/load naming).
+
+## Changelog
+
+- **v1.1.1** — Added an in-game "HELP" button to the Options menu, showing a Miyoo Mini control
+  reference screen. Fixed the Menu key so its Esc action fires on release instead of press,
+  making the OnionOS Menu+Power screenshot combo safe to use without exiting the game.
+- **v1.1.0** — Fixed an intermittent crash caused by an audio buffer over-read. Fixed a
+  persistent, constant audio latency by requesting 44.1 kHz audio output instead of 22050 Hz.
+- **v1.0.0** — Initial release.
+
 ## Building from source
 
 This port requires cross-compiling for ARMv7 hard-float using a Docker-based toolchain. Tested
@@ -169,24 +187,6 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
   background and the Miyoo control reference screen) in that folder; using a different name than
   `data` means they survive step 3 of [Installation](#installation), where the game's own `data`
   folder gets copied in wholesale.
-
-## Known issues
-
-- Intro/cutscene videos don't stretch to fill the screen (they render at their original
-  resolution, centered) — the same behavior is present in the Portmaster version of this port,
-  so it appears to be an inherited limitation of the original engine rather than something
-  specific to this port.
-- The mouse cursor moves noticeably slower on screens with an open text field (character
-  creation, save/load naming).
-
-## Changelog
-
-- **v1.1.1** — Added an in-game "HELP" button to the Options menu, showing a Miyoo Mini control
-  reference screen. Fixed the Menu key so its Esc action fires on release instead of press,
-  making the OnionOS Menu+Power screenshot combo safe to use without exiting the game.
-- **v1.1.0** — Fixed an intermittent crash caused by an audio buffer over-read. Fixed a
-  persistent, constant audio latency by requesting 44.1 kHz audio output instead of 22050 Hz.
-- **v1.0.0** — Initial release.
 
 ## Credits
 
