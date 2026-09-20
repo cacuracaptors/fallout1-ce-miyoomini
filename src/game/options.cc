@@ -17,6 +17,7 @@
 #include "game/gsound.h"
 #include "game/loadsave.h"
 #include "game/message.h"
+#include "game/palette.h"
 #include "game/scripts.h"
 #include "game/textobj.h"
 #include "game/tile.h"
@@ -37,7 +38,7 @@ namespace fallout {
 #define PREFERENCES_WINDOW_WIDTH 640
 #define PREFERENCES_WINDOW_HEIGHT 480
 
-#define OPTIONS_WINDOW_BUTTONS_COUNT 10
+#define OPTIONS_WINDOW_BUTTONS_COUNT 12
 #define PRIMARY_OPTION_VALUE_COUNT 4
 #define SECONDARY_OPTION_VALUE_COUNT 2
 
@@ -134,6 +135,7 @@ typedef struct PreferenceDescription {
 
 static int OptnStart();
 static int OptnEnd();
+static void showMiyooHelp();
 static void ShadeScreen(bool a1);
 static int do_prefscreen();
 static int PrefStart();
@@ -434,6 +436,11 @@ int do_options()
             case KEY_MINUS:
                 DecGamma();
                 break;
+            case KEY_UPPERCASE_H:
+            case KEY_LOWERCASE_H:
+            case 505:
+                showMiyooHelp();
+                break;
             }
         }
 
@@ -556,11 +563,23 @@ static int OptnStart()
     int textY = (ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].height - text_height()) / 2 + 1;
     int buttonY = 17;
 
-    for (int index = 0; index < OPTIONS_WINDOW_BUTTONS_COUNT; index += 2) {
+    // Miyoo Mini port: SAVE/LOAD/PREFERENCES/HELP/EXIT/DONE, matching the
+    // button order used by the FOR:CE fork's own HELP button. eventCode of
+    // -1 in optionsButtonMessageIndex means "use a hardcoded label" instead
+    // of the message file (which only has entries for the original 5).
+    static const int optionsButtonEventCodes[OPTIONS_WINDOW_BUTTONS_COUNT / 2] = { 500, 501, 502, 505, 503, 504 };
+    static const int optionsButtonMessageIndex[OPTIONS_WINDOW_BUTTONS_COUNT / 2] = { 0, 1, 2, -1, 3, 4 };
+
+    for (int slot = 0; slot < OPTIONS_WINDOW_BUTTONS_COUNT / 2; slot++) {
+        int index = slot * 2;
         char text[128];
 
-        const char* msg = getmsg(&optn_msgfl, &optnmesg, index / 2);
-        strcpy(text, msg);
+        if (optionsButtonMessageIndex[slot] == -1) {
+            strcpy(text, "HELP");
+        } else {
+            const char* msg = getmsg(&optn_msgfl, &optnmesg, optionsButtonMessageIndex[slot]);
+            strcpy(text, msg);
+        }
 
         int textX = (ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].width - text_width(text)) / 2;
         if (textX < 0) {
@@ -570,12 +589,12 @@ static int OptnStart()
         text_to_buf(opbtns[index] + ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].width * textY + textX, text, ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].width, ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].width, colorTable[18979]);
         text_to_buf(opbtns[index + 1] + ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].width * textY + textX, text, ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].width, ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].width, colorTable[14723]);
 
-        int btn = win_register_button(optnwin, 13, buttonY, ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].width, ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].height, -1, -1, -1, index / 2 + 500, opbtns[index], opbtns[index + 1], NULL, 32);
+        int btn = win_register_button(optnwin, 13, buttonY, ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].width, ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].height, -1, -1, -1, optionsButtonEventCodes[slot], opbtns[index], opbtns[index + 1], NULL, 32);
         if (btn != -1) {
             win_register_button_sound_func(btn, gsound_lrg_butt_press, gsound_lrg_butt_release);
         }
 
-        buttonY += ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].height + 3;
+        buttonY += ginfo[OPTIONS_WINDOW_FRM_BUTTON_ON].height + 1;
     }
 
     text_font(101);
@@ -583,6 +602,59 @@ static int OptnStart()
     win_draw(optnwin);
 
     return 0;
+}
+
+// Miyoo Mini port: shows a full-screen HELPSCRN.FRM control reference
+// screen. This asset already ships in the base game data (it dates back to
+// the original 1998 release), so no extra files are required for it to
+// work.
+static void showMiyooHelp()
+{
+    int frmId = art_find_fid_by_filename(OBJ_TYPE_INTERFACE, "helpscrn.frm");
+    if (frmId == -1) {
+        return;
+    }
+
+    int fid = art_id(OBJ_TYPE_INTERFACE, frmId, 0, 0, 0);
+
+    CacheEntry* cacheEntry;
+    int width;
+    int height;
+    unsigned char* data = art_lock(fid, &cacheEntry, &width, &height);
+    if (data == NULL) {
+        return;
+    }
+
+    int helpWindowX = (screenGetWidth() - width) / 2;
+    int helpWindowY = (screenGetHeight() - height) / 2;
+    int win = win_add(helpWindowX, helpWindowY, width, height, 0, WINDOW_MODAL);
+    if (win == -1) {
+        art_ptr_unlock(cacheEntry);
+        return;
+    }
+
+    unsigned char* windowBuffer = win_get_buf(win);
+    buf_to_buf(data, width, height, width, windowBuffer, width);
+
+    cycle_disable();
+
+    loadColorTable("art\\intrface\\helpscrn.pal");
+    palette_set_to(cmap);
+
+    win_draw(win);
+
+    while (get_input() == -1 && !game_user_wants_to_quit) {
+        renderPresent();
+        sharedFpsLimiter.throttle();
+    }
+
+    loadColorTable("color.pal");
+    palette_set_to(cmap);
+
+    cycle_enable();
+
+    win_delete(win);
+    art_ptr_unlock(cacheEntry);
 }
 
 // 0x481908

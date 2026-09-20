@@ -111,7 +111,9 @@ bool audioEngineInit()
     }
 
     SDL_AudioSpec desiredSpec;
-    desiredSpec.freq = 22050;
+    // Request 44.1 kHz output to avoid an extra real-time downsampling
+    // pass for 44.1 kHz audio content (matches our Fallout 2 port's fix).
+    desiredSpec.freq = 44100;
     desiredSpec.format = AUDIO_S16;
     desiredSpec.channels = 2;
     desiredSpec.samples = 1024;

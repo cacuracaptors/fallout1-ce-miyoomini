@@ -1185,6 +1185,19 @@ void GNW95_process_message()
                 bool isPhysicalRepeat = isDown && wasKeyDown;
 
                 if (!isPhysicalRepeat) {
+                // Miyoo Mini: Menu key sends Escape. OnionOS uses Menu+Power
+                // to take a screenshot, so firing Escape on keydown would
+                // exit the game before Power can be pressed. Only fire on
+                // release.
+                if (sc == SDL_SCANCODE_ESCAPE) {
+                    if (!isDown) {
+                        keyboardData.key = sc;
+                        keyboardData.down = true;
+                        GNW95_process_key(&keyboardData);
+                        keyboardData.down = false;
+                        GNW95_process_key(&keyboardData);
+                    }
+                } else {
                 bool isArrowKey = (sc == SDL_SCANCODE_LEFT || sc == SDL_SCANCODE_RIGHT
                     || sc == SDL_SCANCODE_UP || sc == SDL_SCANCODE_DOWN);
                 if (!isDown && isArrowKey && gMiyooArrowForwardedDown[sc]) {
@@ -1363,6 +1376,7 @@ void GNW95_process_message()
                         }
                     }
                 }
+                } // end else (not SDL_SCANCODE_ESCAPE)
                 } // end if (!isPhysicalRepeat)
             }
             break;

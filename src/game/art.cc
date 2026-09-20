@@ -1024,6 +1024,27 @@ out:
     return ((v10 << 28) & 0x70000000) | (objectType << 24) | ((animType << 16) & 0xFF0000) | ((a3 << 12) & 0xF000) | (frmId & 0xFFF);
 }
 
+// Searches an object type's file name list for a specific FRM by name and
+// returns its numeric ID (suitable for art_id()), or -1 if not found. Added
+// for the Miyoo Mini port so it can locate HELPSCRN.FRM without needing to
+// know its index ahead of time.
+int art_find_fid_by_filename(int objectType, const char* fileName)
+{
+    if (objectType < 0 || objectType >= OBJ_TYPE_COUNT) {
+        return -1;
+    }
+
+    char* fileNames = art[objectType].fileNames;
+    for (int index = 0; index < art[objectType].fileNamesLength; index++) {
+        if (compat_stricmp(fileNames, fileName) == 0) {
+            return index;
+        }
+        fileNames += 13;
+    }
+
+    return -1;
+}
+
 // 0x4193A0
 static int art_readSubFrameData(unsigned char* data, DB_FILE* stream, int count, int* paddingPtr)
 {
