@@ -25,7 +25,15 @@ files yourself. See [Installation](#installation) below.
 - The D-pad acts as a mouse cursor
 - A custom on-device text entry system (D-pad + buttons) for naming your character, save games,
   etc., since the device has no physical keyboard
+- An in-game "HELP" button in the Options menu, showing a Miyoo Mini control reference screen
+  (pictured below)
 - Working audio and video, including cutscenes
+
+<p align="center">
+  <img src="docs/images/quick-guide.png" alt="In-game Quick Guide showing the Miyoo Mini Plus control scheme" width="480">
+  <br>
+  <sub>The in-game "Quick Guide" help screen, accessible from the Options menu</sub>
+</p>
 
 ## Controls
 
@@ -43,6 +51,9 @@ files yourself. See [Installation](#installation) below.
 | Start | Enter / confirm | — |
 | Select | (modifier) | — |
 | Menu Key (Function) | Esc / Menu/Return/Exit | — |
+
+The Menu key fires Esc on **release**, not on press — this means the OnionOS Menu+Power
+screenshot combo won't accidentally exit the game before you can take the screenshot.
 
 Quicksave and Quickload have a short cooldown after firing (to avoid the underlying hardware's
 key-repeat behavior from spamming save/load repeatedly). All other Select-combo actions can be
@@ -138,7 +149,26 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
   Select-modifier layer, the on-device text entry system, and several fixes for this hardware's
   quirky key-repeat/key-up event delivery (including a bug in the engine's own
   `GNW95_process_key()` where reusing a mutated struct across a synthetic press+release pair
-  could leave a key permanently "stuck" in the auto-repeat system).
+  could leave a key permanently "stuck" in the auto-repeat system, and makes the Menu key's Esc
+  action fire on key-release instead of key-press so the OnionOS Menu+Power screenshot combo
+  doesn't exit the game before Power can be pressed).
+- **`src/audio_engine.cc`** — fixes an intermittent crash where the mixer callback read a full
+  audio frame before checking whether the buffer's end had been reached, causing an
+  out-of-bounds read when the last frame straddled the end of the buffer. Also requests 44.1 kHz
+  audio output instead of 22050 Hz, which fixed a persistent, constant audio latency as a side
+  effect.
+- **`src/game/options.cc`** — adds a "HELP" button to the Options menu, showing `HELPSCRN.FRM`
+  (an asset already present in the base game data since the original 1998 release, replaced with
+  a Miyoo Mini-specific control reference), and enlarges the options menu's background art so
+  all 6 buttons fit without clipping.
+- **`src/game/art.cc` / `src/game/art.h`** — adds `art_find_fid_by_filename()`, a helper for
+  looking up an FRM's numeric ID by name without needing to hardcode it, used to locate
+  `HELPSCRN.FRM` above.
+- **`src/game/gconfig.cc`** — changes the default `master_patches` folder from `data` to
+  `miyoo_patches`. This repository ships a couple of small art overrides (the enlarged options
+  background and the Miyoo control reference screen) in that folder; using a different name than
+  `data` means they survive step 3 of [Installation](#installation), where the game's own `data`
+  folder gets copied in wholesale.
 
 ## Known issues
 
@@ -148,6 +178,15 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
   specific to this port.
 - The mouse cursor moves noticeably slower on screens with an open text field (character
   creation, save/load naming).
+
+## Changelog
+
+- **v1.1.1** — Added an in-game "HELP" button to the Options menu, showing a Miyoo Mini control
+  reference screen. Fixed the Menu key so its Esc action fires on release instead of press,
+  making the OnionOS Menu+Power screenshot combo safe to use without exiting the game.
+- **v1.1.0** — Fixed an intermittent crash caused by an audio buffer over-read. Fixed a
+  persistent, constant audio latency by requesting 44.1 kHz audio output instead of 22050 Hz.
+- **v1.0.0** — Initial release.
 
 ## Credits
 
