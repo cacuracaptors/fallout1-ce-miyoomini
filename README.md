@@ -32,7 +32,7 @@ files yourself. See [Installation](#installation) below.
 <p align="center">
   <img src="docs/images/quick-guide.png" alt="In-game Quick Guide showing the Miyoo Mini Plus control scheme" width="480">
   <br>
-  <sub>The in-game "Quick Guide" help screen, accessible from the Options menu</sub>
+  <sub>The in-game "Quick Guide" help screen, accessible from the game's menu</sub>
 </p>
 
 ## Controls
