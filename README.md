@@ -86,11 +86,9 @@ game's own text field:
 ## Known issues
 
 - Intro/cutscene videos don't stretch to fill the screen (they render at their original
-  resolution, centered) — the same behavior is present in the Portmaster version of this port,
-  so it appears to be an inherited limitation of the original engine rather than something
-  specific to this port.
-- The mouse cursor moves noticeably slower on screens with an open text field (character
-  creation, save/load naming).
+  resolution, centered) — the same behavior is present in the the main fork.
+- The mouse cursor moves noticeably slower on screens with an open text field (character creation,
+save/load naming, etc.). This one tracks down to the main fork too, so we'll have to deal with it for now.
 
 ## Changelog
 
