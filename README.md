@@ -48,7 +48,7 @@ files yourself. See [Installation](#installation) below.
 | R1 | Left click | Quicksave (F6) |
 | L2 | Switch active item | Map (Automap) |
 | R2 | Switch active item's mode | Center screen on player |
-| Start | Enter / confirm | — |
+| Start | Enter / confirm / End Combat | — |
 | Select | (modifier) | — |
 | Menu Key (Function) | Esc / Menu/Return/Exit | — |
 
@@ -80,18 +80,24 @@ game's own text field:
    - `MASTER.DAT`
    - `CRITTER.DAT`
    - the `data/` folder
-   - `fallout.cfg` (if included with your installation)
-4. On the device, open the **Ports** menu — "Fallout" should appear in the list. If not, use "refresh roms" at the bottom of the list. 
+4. On the device, open the **Ports** menu — "Fallout" should appear in the list. If not, use "refresh roms" at the bottom of the list.
+
+> **Important:** do not copy `fallout.cfg` from your PC installation. If you already did, delete it:
+> the game creates its own on first launch. A PC `fallout.cfg` overrides this port's settings and
+> breaks the in-game HELP screen.
 
 ## Known issues
 
 - Intro/cutscene videos don't stretch to fill the screen (they render at their original
-  resolution, centered) — the same behavior is present in the the main fork.
+  resolution, centered) — the same behavior is present in the main fork.
 - The mouse cursor moves noticeably slower on screens with an open text field (character creation,
 save/load naming, etc.). This one tracks down to the main fork too, so we'll have to deal with it for now.
 
 ## Changelog
 
+- **v1.1.2** — Updated the in-game Quick Guide help screen with the on-device text entry
+  controls. Updated the installation instructions: `fallout.cfg` should no longer be copied from a
+  PC installation, since it overrides this port's settings and breaks the HELP screen.
 - **v1.1.1** — Added an in-game "HELP" button to the Options menu, showing a Miyoo Mini control
   reference screen. Fixed the Menu key so its Esc action fires on release instead of press,
   making the OnionOS Menu+Power screenshot combo safe to use without exiting the game.
