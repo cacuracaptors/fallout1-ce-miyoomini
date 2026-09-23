@@ -261,6 +261,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
 
 target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/audio_engine.cc"
+    "src/crash_handler.cc"
+    "src/crash_handler.h"
     "src/audio_engine.h"
     "src/fps_limiter.cc"
     "src/fps_limiter.h"

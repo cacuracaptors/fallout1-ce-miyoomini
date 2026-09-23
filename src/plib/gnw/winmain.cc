@@ -8,6 +8,7 @@
 #include <unistd.h>
 #endif
 
+#include "crash_handler.h"
 #include "game/main.h"
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/svga.h"
@@ -31,6 +32,8 @@ char GNW95_title[256];
 
 int main(int argc, char* argv[])
 {
+    installCrashHandler();
+
     int rc;
 
 #if _WIN32

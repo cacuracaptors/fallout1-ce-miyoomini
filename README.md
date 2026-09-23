@@ -97,7 +97,9 @@ save/load naming, etc.). This one tracks down to the main fork too, so we'll hav
 
 - **v1.1.2** — Updated the in-game Quick Guide help screen with the on-device text entry
   controls. Updated the installation instructions: `fallout.cfg` should no longer be copied from a
-  PC installation, since it overrides this port's settings and breaks the HELP screen.
+  PC installation, since it overrides this port's settings and breaks the HELP screen. Added a
+  crash logger: if the game crashes, it writes a `crash_log.txt` file to the game folder, which
+  helps a lot when reporting the problem.
 - **v1.1.1** — Added an in-game "HELP" button to the Options menu, showing a Miyoo Mini control
   reference screen. Fixed the Menu key so its Esc action fires on release instead of press,
   making the OnionOS Menu+Power screenshot combo safe to use without exiting the game.
@@ -186,6 +188,9 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
 - **`src/game/art.cc` / `src/game/art.h`** — adds `art_find_fid_by_filename()`, a helper for
   looking up an FRM's numeric ID by name without needing to hardcode it, used to locate
   `HELPSCRN.FRM` above.
+- **`src/crash_handler.cc`, `src/plib/gnw/winmain.cc`** — installs a signal handler that writes a
+  backtrace to `crash_log.txt` when the game crashes, so crashes during normal play can be
+  diagnosed later with `addr2line`.
 - **`src/game/gconfig.cc`** — changes the default `master_patches` folder from `data` to
   `miyoo_patches`. This repository ships a couple of small art overrides (the enlarged options
   background and the Miyoo control reference screen) in that folder; using a different name than
