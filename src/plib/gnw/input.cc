@@ -99,6 +99,30 @@ static int screendump_key;
 static bool gMiyooKeyDownState[SDL_NUM_SCANCODES] = { false };
 static Uint32 gMiyooLastFireTime[SDL_NUM_SCANCODES] = { 0 };
 static bool gMiyooArrowForwardedDown[SDL_NUM_SCANCODES] = { false };
+static Uint32 gMiyooLastDownTime[SDL_NUM_SCANCODES] = { 0 };
+
+// The engine empties SDL's event queue (dxinput_flush_keyboard_buffer)
+// without these handlers seeing the events, so key-ups were lost: the button
+// stayed marked as held and its next press was thrown away as a hardware
+// repeat. SDL's own key state is still right, so copy it back, and release
+// any arrow the game still believes is held.
+void miyooResyncKeyState()
+{
+    const Uint8* live = SDL_GetKeyboardState(NULL);
+    for (int i = 0; i < SDL_NUM_SCANCODES; i++) {
+        gMiyooKeyDownState[i] = live[i] != 0;
+    }
+    static const SDL_Scancode arrows[4] = { SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_UP, SDL_SCANCODE_DOWN };
+    for (int i = 0; i < 4; i++) {
+        if (gMiyooArrowForwardedDown[arrows[i]] && !live[arrows[i]]) {
+            KeyboardData kd;
+            kd.key = arrows[i];
+            kd.down = false;
+            GNW95_process_key(&kd);
+            gMiyooArrowForwardedDown[arrows[i]] = false;
+        }
+    }
+}
 // END Miyoo Mini key debounce patch
 
 // BEGIN Miyoo Mini virtual keyboard patch
@@ -1181,6 +1205,16 @@ void GNW95_process_message()
                 SDL_Scancode sc = e.key.keysym.scancode;
                 bool isDown = (e.key.state == SDL_PRESSED);
                 bool wasKeyDown = gMiyooKeyDownState[sc];
+                // Hardware repeats arrive in quick succession. A second
+                // key-down long after the first means its key-up was lost
+                // somewhere: take it as a new press rather than drop it.
+                const Uint32 nowTicks = SDL_GetTicks();
+                if (isDown && wasKeyDown && nowTicks - gMiyooLastDownTime[sc] > 500) {
+                    wasKeyDown = false;
+                }
+                if (isDown) {
+                    gMiyooLastDownTime[sc] = nowTicks;
+                }
                 gMiyooKeyDownState[sc] = isDown;
                 bool isPhysicalRepeat = isDown && wasKeyDown;
 
@@ -1281,7 +1315,10 @@ void GNW95_process_message()
                 }
 
                 const Uint8* liveKeys = SDL_GetKeyboardState(NULL);
-                bool selectHeld = liveKeys[SDL_SCANCODE_RCTRL] != 0;
+                // Select as of this event, not SDL's current state: when the
+                // game is busy, events are handled late, in a burst, and the
+                // live state already describes later presses and releases.
+                bool selectHeld = gMiyooKeyDownState[SDL_SCANCODE_RCTRL];
                 bool suppress = false;
                 SDL_Scancode remapped = sc;
 
@@ -1378,6 +1415,16 @@ void GNW95_process_message()
                 }
                 } // end else (not SDL_SCANCODE_ESCAPE)
                 } // end if (!isPhysicalRepeat)
+            } else {
+                // Keyboard disabled (movies, transitions): the event is
+                // dropped, but the physical state is still tracked. A key-up
+                // lost here left the button marked as held, and its next
+                // press was thrown away as a hardware repeat.
+                const bool isDown = (e.key.state == SDL_PRESSED);
+                gMiyooKeyDownState[e.key.keysym.scancode] = isDown;
+                if (isDown) {
+                    gMiyooLastDownTime[e.key.keysym.scancode] = SDL_GetTicks();
+                }
             }
             break;
         case SDL_WINDOWEVENT:

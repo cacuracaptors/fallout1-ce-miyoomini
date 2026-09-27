@@ -95,6 +95,9 @@ save/load naming, etc.). This one tracks down to the main fork too, so we'll hav
 
 ## Changelog
 
+- **v1.1.3** — Fixed buttons (notably Start and Select) sometimes ignoring presses,
+  especially in long sessions. Crash reports (crash_log.txt) now show exactly where a
+  crash happened.
 - **v1.1.2** — Updated the in-game Quick Guide help screen with the on-device text entry
   controls. Updated the installation instructions: `fallout.cfg` should no longer be copied from a
   PC installation, since it overrides this port's settings and breaks the HELP screen. Added a

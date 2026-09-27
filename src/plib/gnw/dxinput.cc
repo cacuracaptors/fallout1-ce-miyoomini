@@ -100,10 +100,13 @@ bool dxinput_unacquire_keyboard()
     return true;
 }
 
+void miyooResyncKeyState(); // input.cc
+
 // 0x4E05FC
 bool dxinput_flush_keyboard_buffer()
 {
     SDL_FlushEvents(SDL_KEYDOWN, SDL_TEXTINPUT);
+    miyooResyncKeyState();
     return true;
 }
 
