@@ -95,6 +95,12 @@ save/load naming, etc.). This one tracks down to the main fork too, so we'll hav
 
 ## Changelog
 
+- **v1.1.4** — Fixed the occasional crash when skipping the intro videos quickly (the sound
+  engine's thread locks were not working on this device). Lower CPU use, and so better battery
+  life, on menus, dialogs, the inventory, the world map and most maps: the screen is only
+  redrawn when something changes, color cycling (water, fire, monitors) no longer forces
+  full-screen redraws when none of those colors are on screen, and audio mixing is about 10x
+  lighter. Map and save loading is also much faster.
 - **v1.1.3** — Fixed buttons (notably Start and Select) sometimes ignoring presses,
   especially in long sessions. Crash reports (crash_log.txt) now show exactly where a
   crash happened.
@@ -183,7 +189,16 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
   audio frame before checking whether the buffer's end had been reached, causing an
   out-of-bounds read when the last frame straddled the end of the buffer. Also requests 44.1 kHz
   audio output instead of 22050 Hz, which fixed a persistent, constant audio latency as a side
-  effect.
+  effect. The mixer also converts 32 sample frames per call instead of one, which makes it
+  about 10x lighter.
+- **`CMakeLists.txt`** — links the game directly to `libpthread`. On this device's older glibc
+  (2.28) the thread library is separate from libc, and without a direct link every `std::mutex`
+  lock in the game silently did nothing, letting the audio and main threads corrupt each other's
+  memory (the crash when skipping videos).
+- **`src/plib/gnw/svga.cc`, `src/int/movie.cc`** — only presents a new frame when something on
+  screen changed (and at least every 250 ms), and skips the full-screen palette conversion when
+  color cycling changes colors that are not on screen. Partial texture uploads are not used:
+  this device's SDL2 renderer ignores the position of a partial update.
 - **`src/game/options.cc`** — adds a "HELP" button to the Options menu, showing `HELPSCRN.FRM`
   (an asset already present in the base game data since the original 1998 release, replaced with
   a Miyoo Mini-specific control reference), and enlarges the options menu's background art so

@@ -29,6 +29,7 @@ int screenGetWidth();
 int screenGetHeight();
 void handleWindowSizeChanged();
 void renderPresent();
+void screenMarkChanged();
 
 } // namespace fallout
 

@@ -360,6 +360,14 @@ add_subdirectory("third_party/fpattern")
 target_link_libraries(${EXECUTABLE_NAME} fpattern::fpattern)
 
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2_LIBRARIES})
+
+# Miyoo Mini (glibc 2.28): libpthread is a separate library. Without linking it
+# directly, std::mutex/std::recursive_mutex locks silently do nothing.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+    target_link_libraries(${EXECUTABLE_NAME} Threads::Threads)
+endif()
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${SDL2_INCLUDE_DIRS})
 
 if(APPLE)
