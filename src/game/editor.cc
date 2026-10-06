@@ -1531,7 +1531,7 @@ int get_input_str(int win, int cancelKeyCode, char* text, int maxLength, int x, 
 
         win_draw(win);
 
-        while (elapsed_time(frame_time) < 1000 / 24) { }
+        wait_until_elapsed(frame_time, 1000 / 24);
 
         renderPresent();
         sharedFpsLimiter.throttle();
@@ -1862,8 +1862,7 @@ static void PrintBigNum(int x, int y, int flags, int value, int previousValue, i
                     windowWidth);
                 win_draw_rect(windowHandle, &rect);
                 renderPresent();
-                while (elapsed_time(frame_time) < BIG_NUM_ANIMATION_DELAY)
-                    ;
+                wait_until_elapsed(frame_time, BIG_NUM_ANIMATION_DELAY);
             }
 
             buf_to_buf(numbersGraphicBufferPtr + BIG_NUM_WIDTH * ones,
@@ -1884,8 +1883,7 @@ static void PrintBigNum(int x, int y, int flags, int value, int previousValue, i
                     tensBufferPtr,
                     windowWidth);
                 win_draw_rect(windowHandle, &rect);
-                while (elapsed_time(frame_time) < BIG_NUM_ANIMATION_DELAY)
-                    ;
+                wait_until_elapsed(frame_time, BIG_NUM_ANIMATION_DELAY);
             }
 
             buf_to_buf(numbersGraphicBufferPtr + BIG_NUM_WIDTH * tens,
@@ -3149,11 +3147,9 @@ static int AgeWindow()
                 }
 
                 if (v33 > 14.4) {
-                    while (elapsed_time(frame_time) < 1000 / repFtime) {
-                    }
+                    wait_until_elapsed(frame_time, 1000 / repFtime);
                 } else {
-                    while (elapsed_time(frame_time) < 1000 / 24) {
-                    }
+                    wait_until_elapsed(frame_time, 1000 / 24);
                 }
 
                 keyCode = get_input();
@@ -3167,8 +3163,7 @@ static int AgeWindow()
         } else {
             win_draw(win);
 
-            while (elapsed_time(frame_time) < 1000 / 24) {
-            }
+            wait_until_elapsed(frame_time, 1000 / 24);
 
             renderPresent();
             sharedFpsLimiter.throttle();
@@ -3308,8 +3303,7 @@ static void SexWindow()
 
         win_draw(win);
 
-        while (elapsed_time(frame_time) < 41) {
-        }
+        wait_until_elapsed(frame_time, 41);
 
         renderPresent();
         sharedFpsLimiter.throttle();
@@ -3388,11 +3382,9 @@ static void StatButton(int eventCode)
 
         if (v11 >= 19.2) {
             unsigned int delay = 1000 / repFtime;
-            while (elapsed_time(frame_time) < delay) {
-            }
+            wait_until_elapsed(frame_time, delay);
         } else {
-            while (elapsed_time(frame_time) < 1000 / 24) {
-            }
+            wait_until_elapsed(frame_time, 1000 / 24);
         }
 
         renderPresent();
@@ -4873,11 +4865,9 @@ static void SliderBtn(int keyCode)
         if (!isUsingKeyboard) {
             unspentSp = stat_pc_get(PC_STAT_UNSPENT_SKILL_POINTS);
             if (repeatDelay >= 19.2) {
-                while (elapsed_time(frame_time) < 1000 / repFtime) {
-                }
+                wait_until_elapsed(frame_time, 1000 / repFtime);
             } else {
-                while (elapsed_time(frame_time) < 1000 / 24) {
-                }
+                wait_until_elapsed(frame_time, 1000 / 24);
             }
 
             int keyCode = get_input();
@@ -5606,11 +5596,9 @@ static int InputPDLoop(int count, void (*refreshProc)())
                     }
 
                     if (v19 < 14.4) {
-                        while (elapsed_time(frame_time) < 1000 / 24) {
-                        }
+                        wait_until_elapsed(frame_time, 1000 / 24);
                     } else {
-                        while (elapsed_time(frame_time) < 1000 / repFtime) {
-                        }
+                        wait_until_elapsed(frame_time, 1000 / repFtime);
                     }
 
                     renderPresent();
@@ -5653,11 +5641,9 @@ static int InputPDLoop(int count, void (*refreshProc)())
                         }
 
                         if (v19 < 14.4) {
-                            while (elapsed_time(frame_time) < 1000 / 24) {
-                            }
+                            wait_until_elapsed(frame_time, 1000 / 24);
                         } else {
-                            while (elapsed_time(frame_time) < 1000 / repFtime) {
-                            }
+                            wait_until_elapsed(frame_time, 1000 / repFtime);
                         }
 
                         renderPresent();
@@ -5689,11 +5675,9 @@ static int InputPDLoop(int count, void (*refreshProc)())
                         }
 
                         if (v19 < 14.4) {
-                            while (elapsed_time(frame_time) < 1000 / 24) {
-                            }
+                            wait_until_elapsed(frame_time, 1000 / 24);
                         } else {
-                            while (elapsed_time(frame_time) < 1000 / repFtime) {
-                            }
+                            wait_until_elapsed(frame_time, 1000 / repFtime);
                         }
 
                         renderPresent();

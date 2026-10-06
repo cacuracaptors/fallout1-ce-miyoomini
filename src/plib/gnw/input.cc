@@ -1,6 +1,7 @@
 #include "plib/gnw/input.h"
 
 #include <limits.h>
+#include <sched.h>
 #include <stdio.h>
 
 #include "audio_engine.h"
@@ -19,6 +20,8 @@
 #include "plib/gnw/winmain.h"
 
 namespace fallout {
+
+static void miyoo_idle(unsigned int remaining);
 
 typedef struct GNW95RepeatStruct {
     // Time when appropriate key was pressed down or -1 if it's up.
@@ -745,6 +748,11 @@ void pause_for_tocks(unsigned int delay)
 
         // NOTE: Uninline.
         diff = elapsed_tocks(end, start);
+
+        // Miyoo Mini: do not keep a CPU core busy while waiting.
+        if (diff < delay) {
+            miyoo_idle(delay - diff);
+        }
     }
 }
 
@@ -752,14 +760,33 @@ void pause_for_tocks(unsigned int delay)
 void block_for_tocks(unsigned int ms)
 {
     unsigned int start = SDL_GetTicks();
-    unsigned int diff;
-    do {
-        // NOTE: Uninline
-        diff = elapsed_time(start);
-    } while (diff < ms);
+    wait_until_elapsed(start, ms);
 }
 
 // 0x4B3C28
+// Miyoo Mini: called while waiting for `remaining` more milliseconds. The
+// original code busy-waited, keeping a CPU core at 100%. Sleeping only wakes
+// up on 10 ms ticks on this device, so it sleeps while more than 11 ms are
+// left and only yields the CPU for the last part: the timing stays the same.
+static void miyoo_idle(unsigned int remaining)
+{
+    if (remaining > 11) {
+        SDL_Delay(1);
+    } else {
+        sched_yield();
+    }
+}
+
+// Miyoo Mini: waits until `ms` milliseconds have passed since `start` (a
+// get_time() value), replacing the original empty busy-wait loops.
+void wait_until_elapsed(unsigned int start, unsigned int ms)
+{
+    unsigned int elapsed;
+    while ((elapsed = elapsed_time(start)) < ms) {
+        miyoo_idle(ms - elapsed);
+    }
+}
+
 unsigned int elapsed_time(unsigned int start)
 {
     unsigned int end = SDL_GetTicks();

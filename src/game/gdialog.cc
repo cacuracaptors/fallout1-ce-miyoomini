@@ -2190,8 +2190,7 @@ static void talk_to_scroll_subwin(int win, int a2, unsigned char* a3, unsigned c
             v9 -= 10 * (GAME_DIALOG_WINDOW_WIDTH);
 
             tick = get_time();
-            while (elapsed_time(tick) < 33) {
-            }
+            wait_until_elapsed(tick, 33);
 
             renderPresent();
             sharedFpsLimiter.throttle();
@@ -2230,8 +2229,7 @@ static void talk_to_scroll_subwin(int win, int a2, unsigned char* a3, unsigned c
             rect.uly += 10;
 
             tick = get_time();
-            while (elapsed_time(tick) < 33) {
-            }
+            wait_until_elapsed(tick, 33);
 
             renderPresent();
             sharedFpsLimiter.throttle();

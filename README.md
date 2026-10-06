@@ -86,13 +86,13 @@ game's own text field:
 > the game creates its own on first launch. A PC `fallout.cfg` overrides this port's settings and
 > breaks the in-game HELP screen.
 
-## Known issues
-
-- The mouse cursor moves noticeably slower on screens with an open text field (character creation,
-save/load naming, etc.). This one tracks down to the main fork too, so we'll have to deal with it for now.
-
 ## Changelog
 
+- **v1.1.5** — The D-pad mouse cursor now moves at the same speed on every screen: it is no
+  longer slower on screens with a text field (character creation, save names, etc.) or in busy
+  maps. Lower CPU use, and so better battery life, in dialogs, the Pip-Boy, the world map, the
+  save/load screens and the character screen: the game no longer keeps a CPU core busy while it
+  waits between frames.
 - **v1.1.4** — Fixed the not so rare crash when skipping videos and dialog audio quickly (the sound
   engine's thread locks were not working on this device). Lower CPU use, and so better battery
   life, on menus, dialogs, the inventory, the world map and most maps: the screen is only
@@ -176,6 +176,8 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
   hangs forever on this hardware.
 - **`src/plib/gnw/dxinput.cc`** — makes mouse "relative mode" initialization non-fatal (this
   device's SDL2 build doesn't implement it) and adds D-pad-as-mouse-cursor movement.
+  The cursor moves at a fixed speed in pixels per second (like a real mouse), so it is no
+  longer slower on the 24 fps text entry screens.
 - **`src/plib/gnw/input.cc`** — the full physical-button-to-game-action remapping, the
   Select-modifier layer, the on-device text entry system, and several fixes for this hardware's
   quirky key-repeat/key-up event delivery (including a bug in the engine's own
@@ -197,6 +199,10 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
   screen changed (and at least every 250 ms), and skips the full-screen palette conversion when
   color cycling changes colors that are not on screen. Partial texture uploads are not used:
   this device's SDL2 renderer ignores the position of a partial update.
+- **`src/plib/gnw/input.cc`, `src/plib/gnw/vcr.cc`, `src/game/*.cc`** — the original code waited
+  between frames in empty busy-wait loops that kept a CPU core at 100%. Those 39 loops (and
+  `pause_for_tocks()` / `block_for_tocks()`) now sleep while waiting and end at the same moment
+  as before, so animation speeds do not change.
 - **`src/game/options.cc`** — adds a "HELP" button to the Options menu, showing `HELPSCRN.FRM`
   (an asset already present in the base game data since the original 1998 release, replaced with
   a Miyoo Mini-specific control reference), and enlarges the options menu's background art so

@@ -1810,8 +1810,7 @@ int world_map(WorldMapContext ctx)
 
                 should_redraw = 0;
 
-                while (elapsed_time(time) < 1000 / 24) {
-                }
+                wait_until_elapsed(time, 1000 / 24);
             } else {
                 if (!done) {
                     DrawMapTime(0);

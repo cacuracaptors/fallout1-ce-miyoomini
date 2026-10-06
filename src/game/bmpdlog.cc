@@ -843,8 +843,7 @@ int file_dialog(char* title, char** fileList, char* dest, int fileListLength, in
                 }
 
                 unsigned int delay = (scrollCounter > 14.4) ? 1000 / scrollDelay : 1000 / 24;
-                while (elapsed_time(scrollTick) < delay) {
-                }
+                wait_until_elapsed(scrollTick, delay);
 
                 if (game_user_wants_to_quit != 0) {
                     rc = 1;
@@ -867,8 +866,7 @@ int file_dialog(char* title, char** fileList, char* dest, int fileListLength, in
                 doubleClickSelectedFileIndex = -2;
             }
 
-            while (elapsed_time(tick) < (1000 / 24)) {
-            }
+            wait_until_elapsed(tick, (1000 / 24));
         }
 
         if (game_user_wants_to_quit) {
@@ -1316,8 +1314,7 @@ int save_file_dialog(char* title, char** fileList, char* dest, int fileListLengt
                 // FIXME: Missing windowRefresh makes blinking useless.
 
                 unsigned int delay = (scrollCounter > 14.4) ? 1000 / scrollDelay : 1000 / 24;
-                while (elapsed_time(scrollTick) < delay) {
-                }
+                wait_until_elapsed(scrollTick, delay);
 
                 if (game_user_wants_to_quit != 0) {
                     rc = 1;
@@ -1350,8 +1347,7 @@ int save_file_dialog(char* title, char** fileList, char* dest, int fileListLengt
                 doubleClickSelectedFileIndex = -2;
             }
 
-            while (elapsed_time(tick) < (1000 / 24)) {
-            }
+            wait_until_elapsed(tick, (1000 / 24));
         }
 
         if (game_user_wants_to_quit != 0) {

@@ -219,8 +219,7 @@ void credits(const char* filePath, int backgroundFid, bool useReversedStyle)
                                             }
                                         }
 
-                                        while (elapsed_time(tick) < CREDITS_WINDOW_SCROLLING_DELAY) {
-                                        }
+                                        wait_until_elapsed(tick, CREDITS_WINDOW_SCROLLING_DELAY);
 
                                         tick = get_time();
 
@@ -262,8 +261,7 @@ void credits(const char* filePath, int backgroundFid, bool useReversedStyle)
                                             windowBuffer,
                                             windowWidth);
 
-                                        while (elapsed_time(tick) < CREDITS_WINDOW_SCROLLING_DELAY) {
-                                        }
+                                        wait_until_elapsed(tick, CREDITS_WINDOW_SCROLLING_DELAY);
 
                                         tick = get_time();
 

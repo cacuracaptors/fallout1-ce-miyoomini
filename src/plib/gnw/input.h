@@ -34,6 +34,7 @@ unsigned int get_time();
 void pause_for_tocks(unsigned int ms);
 void block_for_tocks(unsigned int ms);
 unsigned int elapsed_time(unsigned int a1);
+void wait_until_elapsed(unsigned int start, unsigned int ms);
 unsigned int elapsed_tocks(unsigned int a1, unsigned int a2);
 unsigned int get_bk_time();
 void set_repeat_rate(unsigned int rate);

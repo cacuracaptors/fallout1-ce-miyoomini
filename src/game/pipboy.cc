@@ -2086,8 +2086,7 @@ static bool TimedRest(int hours, int minutes, int duration)
                     pip_note();
                     win_draw(pip_win);
 
-                    while (elapsed_time(start) < 50) {
-                    }
+                    wait_until_elapsed(start, 50);
                 }
 
                 renderPresent();
@@ -2159,8 +2158,7 @@ static bool TimedRest(int hours, int minutes, int duration)
                     DrawAlrmHitPnts();
                     win_draw(pip_win);
 
-                    while (elapsed_time(start) < 50) {
-                    }
+                    wait_until_elapsed(start, 50);
                 }
 
                 renderPresent();
@@ -2444,8 +2442,7 @@ static int ScreenSaver()
             v31 -= 1;
         } else {
             win_draw_rect(pip_win, &pip_rect);
-            while (elapsed_time(time) < 50) {
-            }
+            wait_until_elapsed(time, 50);
         }
 
         renderPresent();

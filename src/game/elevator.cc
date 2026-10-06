@@ -342,8 +342,7 @@ int elevator_select(int elevator, int* mapPtr, int* elevationPtr, int* tilePtr)
 
                 win_draw(elev_win);
 
-                while (elapsed_time(tick) < delay) {
-                }
+                wait_until_elapsed(tick, delay);
 
                 renderPresent();
                 sharedFpsLimiter.throttle();

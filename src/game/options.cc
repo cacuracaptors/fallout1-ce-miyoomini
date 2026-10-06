@@ -1481,8 +1481,7 @@ static void DoThing(int eventCode)
             trans_buf_to_buf(prfbmp[PREFERENCES_WINDOW_FRM_KNOB_ON], 21, 12, 21, prefbuf + PREFERENCES_WINDOW_WIDTH * meta->knobY + v31, PREFERENCES_WINDOW_WIDTH);
             win_draw(prfwin);
 
-            while (elapsed_time(tick) < 35) {
-            }
+            wait_until_elapsed(tick, 35);
 
             renderPresent();
             sharedFpsLimiter.throttle();

@@ -225,8 +225,7 @@ int vcr_update()
                         * (vcrEntry->time - vcr_last_play_event.time)
                         / (vcrEntry->counter - vcr_last_play_event.counter);
 
-                    while (elapsed_time(vcr_start_time) < delay) {
-                    }
+                    wait_until_elapsed(vcr_start_time, delay);
                 }
             }
 

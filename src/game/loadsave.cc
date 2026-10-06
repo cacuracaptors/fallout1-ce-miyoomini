@@ -641,9 +641,9 @@ int SaveGame(int mode)
                 }
 
                 if (scrollCounter > 14.4) {
-                    while (elapsed_time(start) < 1000 / scrollVelocity) { }
+                    wait_until_elapsed(start, 1000 / scrollVelocity);
                 } else {
-                    while (elapsed_time(start) < 1000 / 24) { }
+                    wait_until_elapsed(start, 1000 / 24);
                 }
 
                 keyCode = get_input();
@@ -687,8 +687,7 @@ int SaveGame(int mode)
                 doubleClickSlot = -1;
             }
 
-            while (elapsed_time(tick) < 1000 / 24) {
-            }
+            wait_until_elapsed(tick, 1000 / 24);
         }
 
         if (rc == 1) {
@@ -1142,9 +1141,9 @@ int LoadGame(int mode)
                 }
 
                 if (scrollCounter > 14.4) {
-                    while (elapsed_time(start) < 1000 / scrollVelocity) { }
+                    wait_until_elapsed(start, 1000 / scrollVelocity);
                 } else {
-                    while (elapsed_time(start) < 1000 / 24) { }
+                    wait_until_elapsed(start, 1000 / 24);
                 }
 
                 keyCode = get_input();
@@ -1194,7 +1193,7 @@ int LoadGame(int mode)
                 doubleClickSlot = -1;
             }
 
-            while (elapsed_time(time) < 1000 / 24) { }
+            wait_until_elapsed(time, 1000 / 24);
         }
 
         if (rc == 1) {
@@ -2266,8 +2265,7 @@ static int get_input_str2(int win, int doneKeyCode, int cancelKeyCode, char* des
             win_draw(win);
         }
 
-        while (elapsed_time(tick) < 1000 / 24) {
-        }
+        wait_until_elapsed(tick, 1000 / 24);
 
         renderPresent();
         sharedFpsLimiter.throttle();
