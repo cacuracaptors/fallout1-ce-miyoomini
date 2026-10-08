@@ -24,6 +24,7 @@
 #include "game/gmovie.h"
 #include "game/gsound.h"
 #include "game/loadsave.h"
+#include "miyoo_shutdown.h"
 #include "game/mainmenu.h"
 #include "game/map.h"
 #include "game/object.h"
@@ -96,8 +97,14 @@ int gnw_main(int argc, char** argv)
         return 1;
     }
 
-    gmovie_play(MOVIE_IPLOGO, GAME_MOVIE_FADE_IN);
-    gmovie_play(MOVIE_INTRO, 0);
+    // Miyoo Mini: the game was saved when the device was turned off; load
+    // that save right away, without the intro movies and the main menu.
+    bool miyooResume = miyooShutdownResumePending();
+
+    if (!miyooResume) {
+        gmovie_play(MOVIE_IPLOGO, GAME_MOVIE_FADE_IN);
+        gmovie_play(MOVIE_INTRO, 0);
+    }
 
     if (main_menu_create() == 0) {
         int language_filter = 1;
@@ -108,10 +115,14 @@ int gnw_main(int argc, char** argv)
         while (!done) {
             kb_clear();
             gsound_background_play_level_music("07desert", 11);
-            main_menu_show(1);
+            bool miyooResumeNow = miyooResume;
+            miyooResume = false;
+            if (!miyooResumeNow) {
+                main_menu_show(1);
+            }
 
             mouse_show();
-            int mainMenuRc = main_menu_loop();
+            int mainMenuRc = miyooResumeNow ? MAIN_MENU_LOAD_GAME : main_menu_loop();
             mouse_hide();
 
             switch (mainMenuRc) {
@@ -156,7 +167,13 @@ int gnw_main(int argc, char** argv)
 
                     loadColorTable("color.pal");
                     palette_fade_to(cmap);
-                    int loadGameRc = LoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
+                    int loadGameRc;
+                    if (miyooResumeNow) {
+                        loadGameRc = lsgMiyooLoadShutdownSave();
+                        miyooShutdownResumeFinished(loadGameRc == 1);
+                    } else {
+                        loadGameRc = LoadGame(LOAD_SAVE_MODE_FROM_MAIN_MENU);
+                    }
                     if (loadGameRc == -1) {
                         debug_printf("\n ** Error running LoadGame()! **\n");
                     } else if (loadGameRc != 0) {
@@ -318,6 +335,7 @@ static void main_game_loop()
     main_game_paused = 0;
 
     scr_enable();
+    miyooShutdownSetInGame(true);
 
     while (game_user_wants_to_quit == 0) {
         sharedFpsLimiter.mark();
@@ -342,6 +360,7 @@ static void main_game_loop()
         sharedFpsLimiter.throttle();
     }
 
+    miyooShutdownSetInGame(false);
     scr_disable();
 
     if (cursorWasHidden) {

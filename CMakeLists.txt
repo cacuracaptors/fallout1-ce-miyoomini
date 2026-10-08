@@ -263,6 +263,8 @@ target_sources(${EXECUTABLE_NAME} PUBLIC
     "src/audio_engine.cc"
     "src/crash_handler.cc"
     "src/crash_handler.h"
+    "src/miyoo_shutdown.cc"
+    "src/miyoo_shutdown.h"
     "src/audio_engine.h"
     "src/fps_limiter.cc"
     "src/fps_limiter.h"

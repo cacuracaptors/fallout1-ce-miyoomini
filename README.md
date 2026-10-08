@@ -28,6 +28,8 @@ files yourself. See [Installation](#installation) below.
 - An in-game "HELP" button in the Options menu, showing a Miyoo Mini control reference screen
   (pictured below)
 - Working audio and video, including cutscenes
+- Saves automatically when you turn the device off, and picks up right where you left off
+  the next time you turn it on (see [Turning the device off](#turning-the-device-off-save-and-resume))
 
 <p align="center">
   <img src="docs/images/quick-guide.png" alt="In-game Quick Guide showing the Miyoo Mini Plus control scheme" width="480">
@@ -86,8 +88,34 @@ game's own text field:
 > the game creates its own on first launch. A PC `fallout.cfg` overrides this port's settings and
 > breaks the in-game HELP screen.
 
+## Turning the device off (save and resume)
+
+Turn the device off with the power button, as usual, while playing: the game saves your progress
+and OnionOS powers off right after. The next time you turn the device on, the game starts by
+itself and loads that save directly, skipping the intro and the main menu.
+
+- The power-off save goes into its own hidden slot (`SAVEGAME/MIYOO01`). It never replaces one of
+  your save slots and does not appear on the Load screen. It is loaded only once, so keep saving
+  normally as well.
+- It saves only where the original game lets you save: on the map, and on your turn in combat.
+  Open windows (inventory, Pip-Boy, character screen, menus) are closed first, as if you pressed
+  the Menu key (so points not yet confirmed on the character screen are discarded). During an
+  enemy's turn or a scripted scene, the game waits for it to finish.
+- In a conversation, on the world map or in the main menu, the game just closes without saving,
+  as before.
+- Hold the Menu key while turning the device on to go to the OnionOS menu instead: the game will
+  still pick up from the power-off save the next time you open it.
+- A forced shutdown (holding the power button for about 10 seconds) does not save.
+
 ## Changelog
 
+- **v1.2.0** — Save on power off: turning the device off with the power button while playing
+  now saves your progress in a separate, hidden slot (it never replaces your own saves), and
+  the next time you turn the device on the game starts by itself and picks up right where you
+  left off, skipping the intro and the main menu. It saves on the map and on your turn in
+  combat: open windows (inventory, Pip-Boy, menus) are closed first, and enemy turns and
+  scripted scenes are waited for. In a conversation or on the world map the game closes without
+  saving, as before.
 - **v1.1.5** — The D-pad mouse cursor now moves at the same speed on every screen: it is no
   longer slower on screens with a text field (character creation, save names, etc.) or in busy
   maps. Lower CPU use, and so better battery life, in dialogs, the Pip-Boy, the world map, the
@@ -199,6 +227,19 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
   screen changed (and at least every 250 ms), and skips the full-screen palette conversion when
   color cycling changes colors that are not on screen. Partial texture uploads are not used:
   this device's SDL2 renderer ignores the position of a partial update.
+- **`src/plib/gnw/svga.cc`** — when the renderer is recreated after a window size change
+  (this device sends one at startup), the current screen is copied into the new texture.
+  Upstream leaves it black, and only the parts redrawn afterwards show up.
+- **`src/miyoo_shutdown.cc`, `src/plib/gnw/winmain.cc`, `src/game/main.cc`, `src/game/game.cc`,
+  `src/plib/gnw/input.cc`, `src/game/loadsave.cc`** — save on power off and resume on the
+  next boot (OnionOS only). The game watches OnionOS's off order (`/tmp/.offOrder`, which is
+  created even when OnionOS does not send the game a SIGTERM) and SIGTERM, closes open windows
+  with Esc, and saves from the same place where the quick save key works, into a separate slot
+  folder (`SAVEGAME\MIYOO01`, via a slot folder prefix in `loadsave.cc`). It then puts back
+  OnionOS's `cmd_to_run.sh`, so OnionOS launches the game again on boot, and the next launch
+  loads that save through the main menu's load path, skipping the intro movies and the menu.
+  A small script in `.tmp_update/checkoff` (removed when the game closes normally) makes
+  OnionOS wait up to 20 s for the save.
 - **`src/plib/gnw/input.cc`, `src/plib/gnw/vcr.cc`, `src/game/*.cc`** — the original code waited
   between frames in empty busy-wait loops that kept a CPU core at 100%. Those 39 loops (and
   `pause_for_tocks()` / `block_for_tocks()`) now sleep while waiting and end at the same moment

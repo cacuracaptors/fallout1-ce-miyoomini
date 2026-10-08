@@ -9,6 +9,7 @@
 #endif
 
 #include "crash_handler.h"
+#include "miyoo_shutdown.h"
 #include "game/main.h"
 #include "plib/gnw/gnw.h"
 #include "plib/gnw/svga.h"
@@ -33,6 +34,9 @@ char GNW95_title[256];
 int main(int argc, char* argv[])
 {
     installCrashHandler();
+
+    // Miyoo Mini: save when the device is turned off (OnionOS only).
+    miyooShutdownInit(argv[0]);
 
     int rc;
 

@@ -25,6 +25,7 @@
 #include "game/inventry.h"
 #include "game/item.h"
 #include "game/loadsave.h"
+#include "miyoo_shutdown.h"
 #include "game/map.h"
 #include "game/moviefx.h"
 #include "game/object.h"
@@ -431,6 +432,10 @@ int game_handle_input(int eventCode, bool isInCombatMode)
     if (game_state() == GAME_STATE_5) {
         dialogue_system_enter();
     }
+
+    // Miyoo Mini: the device is being turned off. Save here, where the save
+    // keys work (map screen, player's turn in combat), and close.
+    miyooShutdownHandleInGame(lsgMiyooShutdownSave);
 
     if (eventCode == -1) {
         if ((mouse_get_buttons() & MOUSE_EVENT_WHEEL) != 0) {

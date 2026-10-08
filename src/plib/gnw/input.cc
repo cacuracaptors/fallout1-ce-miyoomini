@@ -18,6 +18,7 @@
 #include "plib/gnw/touch.h"
 #include "plib/gnw/vcr.h"
 #include "plib/gnw/winmain.h"
+#include "miyoo_shutdown.h"
 
 namespace fallout {
 
@@ -283,6 +284,9 @@ int get_input()
     int v3;
 
     GNW95_process_message();
+
+    // Miyoo Mini: turned off outside the game loop: close without saving.
+    miyooShutdownPoll();
 
     if (!GNW95_isActive) {
         GNW95_lost_focus();

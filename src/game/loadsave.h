@@ -23,6 +23,8 @@ void InitLoadSave();
 void ResetLoadSave();
 int SaveGame(int mode);
 int LoadGame(int mode);
+bool lsgMiyooShutdownSave();
+int lsgMiyooLoadShutdownSave();
 int isLoadingGame();
 void KillOldMaps();
 int MapDirErase(const char* path, const char* a2);
