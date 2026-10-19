@@ -7,7 +7,7 @@ re-implementation of the original Fallout) to run as a standalone OnionOS Port o
 Built on top of the work of [Alexander Batalov](https://github.com/alexbatalov/fallout1-ce) and
 the SDL2 port for this hardware by [steward-fu](https://github.com/steward-fu/sdl2).
 
-For Fallout 2, check https://github.com/cacuracaptors/fallout2-ce-miyoomini.
+For **Fallout 2**, check https://github.com/cacuracaptors/fallout2-ce-miyoomini.
 
 ## ⚠️ You need your own game files
 
