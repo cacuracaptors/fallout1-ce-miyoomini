@@ -272,3 +272,7 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
 This port's source code follows the same license as fallout1-ce: the **Sustainable Use License**
 (see `LICENSE.md`). Use and distribution are free for non-commercial purposes, provided the
 original copyright notices are kept intact.
+
+## AI-Assisted
+
+Claude Opus 5.5 was used to write parts of the code and to speed up debugging and optimization.
