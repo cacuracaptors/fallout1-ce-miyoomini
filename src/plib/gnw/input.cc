@@ -3,6 +3,9 @@
 #include <limits.h>
 #include <sched.h>
 #include <stdio.h>
+#include <vector>
+
+#include <lodepng.h>
 
 #include "audio_engine.h"
 #include "platform_compat.h"
@@ -104,6 +107,13 @@ static bool gMiyooKeyDownState[SDL_NUM_SCANCODES] = { false };
 static Uint32 gMiyooLastFireTime[SDL_NUM_SCANCODES] = { 0 };
 static bool gMiyooArrowForwardedDown[SDL_NUM_SCANCODES] = { false };
 static Uint32 gMiyooLastDownTime[SDL_NUM_SCANCODES] = { 0 };
+
+// Select pressed and released alone, quickly, is ESC (the MENU button belongs
+// to OnionOS's Game Switcher). Held longer, or used with another button, it
+// is only a modifier and no ESC is sent when it is released.
+static Uint32 gMiyooSelectDownStamp = 0;
+static bool gMiyooSelectComboUsed = false;
+static const Uint32 SELECT_TAP_MAX_MS = 500;
 
 // The engine empties SDL's event queue (dxinput_flush_keyboard_buffer)
 // without these handlers seeing the events, so key-ups were lost: the button
@@ -590,6 +600,86 @@ void dump_screen()
     pal = getSystemPalette();
     screendump_func(width, length, screendump_buf, pal);
     mem_free(screendump_buf);
+}
+
+// Miyoo Mini: the screen as a PNG (the picture OnionOS's Game Switcher shows).
+// Quick settings: the screen is only encoded once, and time matters more than size.
+bool miyooSaveScreenPng(const char* path)
+{
+    int width = scr_size.lrx - scr_size.ulx + 1;
+    int length = scr_size.lry - scr_size.uly + 1;
+    if (width <= 0 || length <= 0) {
+        return false;
+    }
+
+    unsigned char* previousBuffer = screendump_buf;
+    screendump_buf = (unsigned char*)mem_malloc(width * length);
+    if (screendump_buf == NULL) {
+        screendump_buf = previousBuffer;
+        return false;
+    }
+
+    ScreenBlitFunc* old_scr_blit = scr_blit;
+    scr_blit = buf_blit;
+
+    ScreenBlitFunc* old_mouse_blit = mouse_blit;
+    mouse_blit = buf_blit;
+
+    ScreenTransBlitFunc* old_mouse_blit_trans = mouse_blit_trans;
+    mouse_blit_trans = NULL;
+
+    win_refresh_all(&scr_size);
+
+    mouse_blit_trans = old_mouse_blit_trans;
+    mouse_blit = old_mouse_blit;
+    scr_blit = old_scr_blit;
+
+    unsigned char* palette = getSystemPalette();
+
+    bool ok = false;
+    {
+        size_t pixels = static_cast<size_t>(width) * length;
+        std::vector<unsigned char> image(pixels * 3);
+        for (size_t i = 0; i < pixels; i++) {
+            unsigned char index = screendump_buf[i];
+            image[i * 3] = palette[index * 3] << 2;
+            image[i * 3 + 1] = palette[index * 3 + 1] << 2;
+            image[i * 3 + 2] = palette[index * 3 + 2] << 2;
+        }
+
+        lodepng::State state;
+        state.info_raw.colortype = LCT_RGB;
+        state.info_raw.bitdepth = 8;
+        state.info_png.color.colortype = LCT_RGB;
+        state.info_png.color.bitdepth = 8;
+        state.encoder.auto_convert = 0;
+        state.encoder.filter_strategy = LFS_ZERO;
+        state.encoder.zlibsettings.btype = 1;
+        state.encoder.zlibsettings.windowsize = 512;
+        state.encoder.zlibsettings.nicematch = 16;
+        state.encoder.zlibsettings.lazymatching = 0;
+
+        std::vector<unsigned char> png;
+        if (lodepng::encode(png, image, width, length, state) == 0) {
+            char temp[512];
+            snprintf(temp, sizeof(temp), "%s.tmp", path);
+            FILE* stream = fopen(temp, "wb");
+            if (stream != NULL) {
+                ok = fwrite(png.data(), 1, png.size(), stream) == png.size();
+                ok = (fclose(stream) == 0) && ok;
+                if (ok) {
+                    ok = rename(temp, path) == 0;
+                }
+                if (!ok) {
+                    remove(temp);
+                }
+            }
+        }
+    }
+
+    mem_free(screendump_buf);
+    screendump_buf = previousBuffer;
+    return ok;
 }
 
 // 0x4B3838
@@ -1248,6 +1338,14 @@ void GNW95_process_message()
                 }
                 gMiyooKeyDownState[sc] = isDown;
                 bool isPhysicalRepeat = isDown && wasKeyDown;
+                if (isDown && !isPhysicalRepeat && !e.key.repeat) {
+                    if (sc == SDL_SCANCODE_RCTRL) {
+                        gMiyooSelectDownStamp = nowTicks;
+                        gMiyooSelectComboUsed = false;
+                    } else if (gMiyooKeyDownState[SDL_SCANCODE_RCTRL]) {
+                        gMiyooSelectComboUsed = true;
+                    }
+                }
 
                 if (!isPhysicalRepeat) {
                 // Miyoo Mini: Menu key sends Escape. OnionOS uses Menu+Power
@@ -1255,7 +1353,9 @@ void GNW95_process_message()
                 // exit the game before Power can be pressed. Only fire on
                 // release.
                 if (sc == SDL_SCANCODE_ESCAPE) {
-                    if (!isDown) {
+                    // Under OnionOS the game reads MENU itself (Game Switcher);
+                    // only when typing a name it is ESC (cancel).
+                    if (!isDown && (!miyooMenuKeyOwned() || gMiyooTextInputActive)) {
                         keyboardData.key = sc;
                         keyboardData.down = true;
                         GNW95_process_key(&keyboardData);
@@ -1292,6 +1392,13 @@ void GNW95_process_message()
                             gMiyooArrowForwardedDown[arrowSc] = false;
                         }
                     }
+                    // A quick click on Select alone is ESC. Not when it was
+                    // held for a while or another button was pressed meanwhile.
+                    if (wasKeyDown && !gMiyooSelectComboUsed
+                        && nowTicks - gMiyooSelectDownStamp < SELECT_TAP_MAX_MS) {
+                        miyooSendSyntheticKey(SDL_SCANCODE_ESCAPE);
+                    }
+                    gMiyooSelectComboUsed = false;
                 } else
                 if (gMiyooTextInputActive) {
                     bool handled = false;
@@ -1601,6 +1708,11 @@ void endTextInput()
 {
     SDL_StopTextInput();
     gMiyooTextInputActive = false;
+}
+
+bool miyooTextInputActive()
+{
+    return gMiyooTextInputActive;
 }
 
 } // namespace fallout

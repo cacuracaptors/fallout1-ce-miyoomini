@@ -122,7 +122,14 @@ int gnw_main(int argc, char** argv)
             }
 
             mouse_show();
-            int mainMenuRc = miyooResumeNow ? MAIN_MENU_LOAD_GAME : main_menu_loop();
+            int mainMenuRc;
+            if (miyooResumeNow) {
+                mainMenuRc = MAIN_MENU_LOAD_GAME;
+            } else {
+                // Miyoo Mini: the menu waits for input; back to the normal CPU speed.
+                miyooBoostReset();
+                mainMenuRc = main_menu_loop();
+            }
             mouse_hide();
 
             switch (mainMenuRc) {
@@ -327,6 +334,9 @@ static void main_unload_new()
 // 0x472A54
 static void main_game_loop()
 {
+    // Miyoo Mini: loading is over; back to the normal CPU speed.
+    miyooBoostReset();
+
     bool cursorWasHidden = mouse_hidden();
     if (cursorWasHidden) {
         mouse_show();

@@ -2,6 +2,9 @@
 
 #include <string.h>
 
+#include <string>
+#include <unordered_map>
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -26,6 +29,134 @@
 #include <SDL.h>
 
 namespace fallout {
+
+static bool compatFileModeMayWrite(const char* mode)
+{
+    return mode != NULL && (strchr(mode, 'w') != NULL || strchr(mode, 'a') != NULL || strchr(mode, '+') != NULL);
+}
+
+#ifndef _WIN32
+typedef struct CompatDirectoryCacheEntry {
+    std::unordered_map<std::string, std::string> entries;
+} CompatDirectoryCacheEntry;
+
+static const size_t kCompatDirectoryEntryCacheMaxSize = 1024;
+static std::unordered_map<std::string, CompatDirectoryCacheEntry> compatDirectoryEntryCache;
+
+static std::string compatLowercase(std::string value)
+{
+    for (char& ch : value) {
+        ch = static_cast<char>(SDL_tolower(static_cast<unsigned char>(ch)));
+    }
+    return value;
+}
+
+static void compatDirectoryEntryCacheClear()
+{
+    compatDirectoryEntryCache.clear();
+}
+
+// Miyoo Mini: the original code listed every directory of a path again for
+// each file opened (opendir/readdir per path component), thousands of times
+// while loading a map or a save. Listings are now kept in memory, and
+// creating, removing or renaming a file only changes one entry of one
+// listing. The cache key of a directory is the textual prefix of the path up
+// to its last separator ("." when there is none, "/" for the root).
+static bool compatDirectoryEntryCacheSplit(const char* nativePath, std::string& directoryPath, std::string& name)
+{
+    const char* sep = strrchr(nativePath, '/');
+    if (sep == NULL) {
+        directoryPath = ".";
+        name = nativePath;
+    } else if (sep == nativePath) {
+        directoryPath = "/";
+        name = sep + 1;
+    } else {
+        directoryPath.assign(nativePath, sep - nativePath);
+        name = sep + 1;
+    }
+
+    return !name.empty();
+}
+
+static void compatDirectoryEntryCacheAdd(const char* nativePath)
+{
+    std::string directoryPath;
+    std::string name;
+    if (!compatDirectoryEntryCacheSplit(nativePath, directoryPath, name)) {
+        return;
+    }
+
+    auto directory = compatDirectoryEntryCache.find(directoryPath);
+    if (directory != compatDirectoryEntryCache.end()) {
+        directory->second.entries[compatLowercase(name)] = name;
+    }
+}
+
+static void compatDirectoryEntryCacheRemove(const char* nativePath)
+{
+    std::string directoryPath;
+    std::string name;
+    if (!compatDirectoryEntryCacheSplit(nativePath, directoryPath, name)) {
+        return;
+    }
+
+    auto directory = compatDirectoryEntryCache.find(directoryPath);
+    if (directory != compatDirectoryEntryCache.end()) {
+        directory->second.entries.erase(compatLowercase(name));
+    }
+}
+
+static const CompatDirectoryCacheEntry* compatDirectoryEntryCacheGet(const std::string& directoryPath)
+{
+    auto existing = compatDirectoryEntryCache.find(directoryPath);
+    if (existing != compatDirectoryEntryCache.end()) {
+        return &(existing->second);
+    }
+
+    DIR* dir = opendir(directoryPath.c_str());
+    if (dir == NULL) {
+        return NULL;
+    }
+
+    if (compatDirectoryEntryCache.size() >= kCompatDirectoryEntryCacheMaxSize) {
+        compatDirectoryEntryCache.clear();
+    }
+
+    auto inserted = compatDirectoryEntryCache.emplace(directoryPath, CompatDirectoryCacheEntry());
+    CompatDirectoryCacheEntry& cacheEntry = inserted.first->second;
+
+    struct dirent* entry = readdir(dir);
+    while (entry != NULL) {
+        cacheEntry.entries.emplace(compatLowercase(entry->d_name), entry->d_name);
+        entry = readdir(dir);
+    }
+
+    closedir(dir);
+
+    return &cacheEntry;
+}
+#else
+static void compatDirectoryEntryCacheClear()
+{
+}
+
+static void compatDirectoryEntryCacheAdd(const char*)
+{
+}
+
+static void compatDirectoryEntryCacheRemove(const char*)
+{
+}
+#endif
+
+static void compat_prepare_native_path(char* nativePath, const char* path)
+{
+    strncpy(nativePath, path, COMPAT_MAX_PATH - 1);
+    nativePath[COMPAT_MAX_PATH - 1] = '\0';
+    compat_windows_path_to_native(nativePath);
+    compat_resolve_path(nativePath);
+}
 
 int compat_stricmp(const char* string1, const char* string2)
 {
@@ -217,16 +348,20 @@ long compat_filelength(int fd)
 
 int compat_mkdir(const char* path)
 {
+    compatDirectoryEntryCacheClear();
+
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
+    compat_prepare_native_path(nativePath, path);
 
 #ifdef _WIN32
-    return mkdir(nativePath);
+    int rc = mkdir(nativePath);
 #else
-    return mkdir(nativePath, 0755);
+    int rc = mkdir(nativePath, 0755);
 #endif
+    if (rc == 0) {
+        compatDirectoryEntryCacheClear();
+    }
+    return rc;
 }
 
 unsigned int compat_timeGetTime()
@@ -242,35 +377,42 @@ unsigned int compat_timeGetTime()
 
 FILE* compat_fopen(const char* path, const char* mode)
 {
+    bool mayWrite = compatFileModeMayWrite(mode);
+
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
-    return fopen(nativePath, mode);
+    compat_prepare_native_path(nativePath, path);
+    FILE* stream = fopen(nativePath, mode);
+    if (mayWrite && stream != NULL) {
+        compatDirectoryEntryCacheAdd(nativePath);
+    }
+    return stream;
 }
 
 int compat_remove(const char* path)
 {
     char nativePath[COMPAT_MAX_PATH];
-    strcpy(nativePath, path);
-    compat_windows_path_to_native(nativePath);
-    compat_resolve_path(nativePath);
-    return remove(nativePath);
+    compat_prepare_native_path(nativePath, path);
+    int rc = remove(nativePath);
+    if (rc == 0) {
+        compatDirectoryEntryCacheRemove(nativePath);
+    }
+    return rc;
 }
 
 int compat_rename(const char* oldFileName, const char* newFileName)
 {
     char nativeOldFileName[COMPAT_MAX_PATH];
-    strcpy(nativeOldFileName, oldFileName);
-    compat_windows_path_to_native(nativeOldFileName);
-    compat_resolve_path(nativeOldFileName);
+    compat_prepare_native_path(nativeOldFileName, oldFileName);
 
     char nativeNewFileName[COMPAT_MAX_PATH];
-    strcpy(nativeNewFileName, newFileName);
-    compat_windows_path_to_native(nativeNewFileName);
-    compat_resolve_path(nativeNewFileName);
+    compat_prepare_native_path(nativeNewFileName, newFileName);
 
-    return rename(nativeOldFileName, nativeNewFileName);
+    int rc = rename(nativeOldFileName, nativeNewFileName);
+    if (rc == 0) {
+        compatDirectoryEntryCacheRemove(nativeOldFileName);
+        compatDirectoryEntryCacheAdd(nativeNewFileName);
+    }
+    return rc;
 }
 
 void compat_windows_path_to_native(char* path)
@@ -290,16 +432,23 @@ void compat_resolve_path(char* path)
 {
 #ifndef _WIN32
     char* pch = path;
-
-    DIR* dir;
+    std::string directoryPath;
     if (pch[0] == '/') {
-        dir = opendir("/");
+        directoryPath = "/";
         pch++;
     } else {
-        dir = opendir(".");
+        directoryPath = ".";
     }
 
-    while (dir != NULL) {
+    while (true) {
+        while (*pch == '/') {
+            pch++;
+        }
+
+        if (*pch == '\0') {
+            break;
+        }
+
         char* sep = strchr(pch, '/');
         size_t length;
         if (sep != NULL) {
@@ -308,31 +457,25 @@ void compat_resolve_path(char* path)
             length = strlen(pch);
         }
 
-        bool found = false;
-
-        struct dirent* entry = readdir(dir);
-        while (entry != NULL) {
-            if (strlen(entry->d_name) == length && compat_strnicmp(pch, entry->d_name, length) == 0) {
-                strncpy(pch, entry->d_name, length);
-                found = true;
-                break;
-            }
-            entry = readdir(dir);
-        }
-
-        closedir(dir);
-        dir = NULL;
-
-        if (!found) {
+        const CompatDirectoryCacheEntry* directoryCacheEntry = compatDirectoryEntryCacheGet(directoryPath);
+        if (directoryCacheEntry == NULL) {
             break;
         }
+
+        std::string component(pch, length);
+        auto cacheEntry = directoryCacheEntry->entries.find(compatLowercase(component));
+        if (cacheEntry == directoryCacheEntry->entries.end()) {
+            break;
+        }
+
+        strncpy(pch, cacheEntry->second.c_str(), length);
 
         if (sep == NULL) {
             break;
         }
 
         *sep = '\0';
-        dir = opendir(path);
+        directoryPath = path;
         *sep = '/';
 
         pch = sep + 1;

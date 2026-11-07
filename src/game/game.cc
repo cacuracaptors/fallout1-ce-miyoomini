@@ -181,7 +181,9 @@ int game_init(const char* windowTitle, bool isMapper, int font, int flags, int a
     initWindow(&video_options, flags);
     palette_init();
 
-    if (!game_in_mapper) {
+    // Miyoo Mini: no splash screen when a save is about to be loaded
+    // (power-off resume or game opened from the GameSwitcher).
+    if (!game_in_mapper && !miyooShutdownResumePending()) {
         game_splash_screen();
     }
 

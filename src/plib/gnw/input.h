@@ -54,6 +54,9 @@ void GNW95_lost_focus();
 void beginTextInput();
 void endTextInput();
 
+// Miyoo Mini: true while a name is being typed (virtual keyboard).
+bool miyooTextInputActive();
+
 } // namespace fallout
 
 #endif /* FALLOUT_PLIB_GNW_INPUT_H_ */

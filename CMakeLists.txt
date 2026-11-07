@@ -361,6 +361,10 @@ target_link_libraries(${EXECUTABLE_NAME} adecode::adecode)
 add_subdirectory("third_party/fpattern")
 target_link_libraries(${EXECUTABLE_NAME} fpattern::fpattern)
 
+# Miyoo Mini: PNG encoder for the picture of the OnionOS Game Switcher.
+target_sources(${EXECUTABLE_NAME} PUBLIC "third_party/lodepng/lodepng.cpp")
+target_include_directories(${EXECUTABLE_NAME} PRIVATE "third_party/lodepng")
+
 target_link_libraries(${EXECUTABLE_NAME} ${SDL2_LIBRARIES})
 
 # Miyoo Mini (glibc 2.28): libpthread is a separate library. Without linking it

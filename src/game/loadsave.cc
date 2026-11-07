@@ -38,6 +38,7 @@
 #include "game/version.h"
 #include "game/wordwrap.h"
 #include "game/worldmap.h"
+#include "miyoo_shutdown.h"
 #include "platform_compat.h"
 #include "plib/color/color.h"
 #include "plib/gnw/button.h"
@@ -1598,6 +1599,9 @@ int isLoadingGame()
 // 0x46FCCC
 static int LoadSlot(int slot)
 {
+    // Miyoo Mini: CPU at full speed while the save loads.
+    MiyooBoostScope miyooBoost;
+
     gmouse_set_cursor(MOUSE_CURSOR_WAIT_PLANET);
 
     if (isInCombat()) {

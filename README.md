@@ -30,6 +30,11 @@ files yourself. See [Installation](#installation) below.
 - Working audio and video, including cutscenes
 - Saves automatically when you turn the device off, and picks up right where you left off
   the next time you turn it on (see [Turning the device off](#turning-the-device-off-save-and-resume))
+- The OnionOS Game Switcher works from inside the game, with the game's picture and a save
+  that is loaded when you come back (see [Game Switcher](#game-switcher))
+- Low battery warning icon, and an automatic save before the battery runs out
+  (see [Low battery](#low-battery))
+- Faster loading of saves and maps
 
 <p align="center">
   <img src="docs/images/quick-guide.png" alt="In-game Quick Guide showing the Miyoo Mini Plus control scheme" width="480">
@@ -51,11 +56,17 @@ files yourself. See [Installation](#installation) below.
 | L2 | Switch active item | Map (Automap) |
 | R2 | Switch active item's mode | Center screen on player |
 | Start | Enter / confirm / End Combat | — |
-| Select | (modifier) | — |
-| Menu Key (Function) | Esc / Menu/Return/Exit | — |
+| Select | Modifier (hold) / Esc (click) | — |
+| Menu Key (Function) | Game Switcher (OnionOS) | — |
 
-The Menu key fires Esc on **release**, not on press — this means the OnionOS Menu+Power
-screenshot combo won't accidentally exit the game before you can take the screenshot.
+**Select**: a quick click on Select alone is Esc (opens the game's options menu, closes
+windows, goes back). Holding it, or pressing another button while it is down, makes it only a
+modifier, and no Esc is sent when it is released.
+
+**Menu Key**: it does what OnionOS's *Tweaks > Shortcuts* sets for it (by default: single press =
+Game Switcher, long press = back to the OnionOS menu, double press = previous game). See
+[Game Switcher](#game-switcher). The Menu+Power screenshot combo of OnionOS keeps working. When
+the game does not run under OnionOS, the Menu key is Esc.
 
 Quicksave and Quickload have a short cooldown after firing (to avoid the underlying hardware's
 key-repeat behavior from spamming save/load repeatedly). All other Select-combo actions can be
@@ -72,7 +83,7 @@ game's own text field:
 - **A**: confirms the current letter and moves to the next position
 - **B**: deletes the last confirmed letter
 - **Start**: confirms the whole text entry (Enter)
-- **Menu Key (Function)**: cancels the whole text entry  (Esc)
+- **Menu Key (Function)** or **Select (click)**: cancels the whole text entry (Esc)
 
 ## Installation
 
@@ -107,8 +118,40 @@ itself and loads that save directly, skipping the intro and the main menu.
   still pick up from the power-off save the next time you open it.
 - A forced shutdown (holding the power button for about 10 seconds) does not save.
 
+## Game Switcher
+
+The Menu key does what OnionOS's *Tweaks > Shortcuts* sets for a single, long and double press:
+Game Switcher, back to the OnionOS menu, or the previous game. Before leaving, the game saves in
+the same hidden slot as at power off (closing open windows first, and waiting for enemy turns or
+scenes), and the Game Switcher shows a picture of the game's screen at that moment. When you open
+Fallout again **from the Game Switcher**, it loads that save right away. Started from the game
+list, Fallout starts from the beginning, as usual.
+
+- As at power off, it only saves on the map and on your turn in combat. In a conversation or on
+  the world map the request is dropped and the game goes on. In the main menu or while loading
+  it just leaves.
+- With *Tweaks > Shortcuts* set to "Off" or the Game Switcher turned off in OnionOS, the Menu
+  key only leaves the game (single press).
+- While typing a name, the Menu key cancels the entry (Esc) instead.
+- The volume and brightness bars of OnionOS are shown over the game. Create an empty file named
+  `overlay_off.txt` in the game folder to turn this behavior off.
+
+## Low battery
+
+Below the "warn at" level of OnionOS (default 15 %) a red battery icon is shown at the top right
+of the screen, drawn by the game itself (OnionOS's own icon flickers over the game). Under the
+"exit at" level (default 4 %) the game saves as for a power off and OnionOS turns the device off.
+Both levels, and turning them off, follow OnionOS's battery settings.
+
 ## Changelog
 
+- **v1.3.0** — The Menu key now opens the OnionOS Game Switcher (and does what *Tweaks >
+  Shortcuts* sets for a long and double press): the game is saved first, with the screen picture
+  the Game Switcher shows, and opening it again from there loads the save. Select, clicked
+  alone, is now Esc (hold it for the modifier combos); the Menu key cancels text entry. Low
+  battery icon and an automatic save and shutdown before the battery runs out. OnionOS's volume
+  and brightness bars show over the game. Faster loading of saves and maps (directory listings
+  are kept in memory, and the CPU runs at full speed while loading). Updated Quick Guide.
 - **v1.2.0** — Save on power off: turning the device off with the power button while playing
   now saves your progress in a separate, hidden slot (it never replaces your own saves), and
   the next time you turn the device on the game starts by itself and picks up right where you
@@ -240,6 +283,21 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
   loads that save through the main menu's load path, skipping the intro movies and the menu.
   A small script in `.tmp_update/checkoff` (removed when the game closes normally) makes
   OnionOS wait up to 20 s for the save.
+- **`src/miyoo_shutdown.cc`, `src/plib/gnw/input.cc`, `src/plib/gnw/svga.cc`,
+  `src/game/main.cc`, `third_party/lodepng`** — OnionOS Game Switcher: the Menu key is read from
+  evdev (`/dev/input/event0`) and timed like OnionOS's keymon times it for RetroArch (single,
+  long, double); the actions come from `keymap.json`. The game saves in the power-off slot, writes
+  the screen as a PNG into `romScreens/` (the file name is OnionOS's hash of the game's shortcut
+  path in the recent list) and asks OnionOS to start the Game Switcher, the menu or the previous
+  game (`.runGameSwitcher`, `cmd_to_run.sh` + `/tmp/quick_switch`). The save is loaded on the next
+  launch only when `/tmp/prev_state` says the game was opened from the Game Switcher. Select
+  clicked alone sends Esc. The volume/brightness bars drawn by keymon into the screen memory are
+  kept visible (the game stops presenting for a moment and pans the screen to page 0), and the low
+  battery icon is drawn by the game (it tells batmon with `/tmp/hasBatteryDisplay`).
+- **`src/platform_compat.cc`, `src/game/loadsave.cc`, `src/game/main.cc`** — loading speed:
+  the case-insensitive path lookup listed every directory again for each file (thousands of
+  times per load); the listings are now cached and kept up to date as files are created, removed
+  or renamed. The CPU governor is set to "performance" while a save loads, and put back after.
 - **`src/plib/gnw/input.cc`, `src/plib/gnw/vcr.cc`, `src/game/*.cc`** — the original code waited
   between frames in empty busy-wait loops that kept a CPU core at 100%. Those 39 loops (and
   `pause_for_tocks()` / `block_for_tocks()`) now sleep while waiting and end at the same moment
