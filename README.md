@@ -7,7 +7,7 @@ re-implementation of the original Fallout) to run as a standalone OnionOS Port o
 Built on top of the work of [Alexander Batalov](https://github.com/alexbatalov/fallout1-ce) and
 the SDL2 port for this hardware by [steward-fu](https://github.com/steward-fu/sdl2).
 
-For Fallout 2, check https://github.com/cacuracaptors/fallout2-ce-miyoomini.
+For **`Fallout 2`**, check https://github.com/cacuracaptors/fallout2-ce-miyoomini.
 
 ## ⚠️ You need your own game files
 
@@ -330,3 +330,7 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
 This port's source code follows the same license as fallout1-ce: the **Sustainable Use License**
 (see `LICENSE.md`). Use and distribution are free for non-commercial purposes, provided the
 original copyright notices are kept intact.
+
+## AI-Assisted
+
+Claude Opus 5.5 was used to write most part of the code and to speed up debugging and optimization. Even though I'm no software engineer, I have a background in the modding community, so I understand how basic rendering tricks work. I don't write complex code myself (that's why I use Claude) but I understand how it's logic works and what's going on most of the time, so I can control what Claude is doing more tightly.
