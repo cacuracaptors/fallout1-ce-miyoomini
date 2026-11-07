@@ -18,7 +18,8 @@ files yourself. See [Installation](#installation) below.
 
 ## Features
 
-- Runs at full speed, no overclock needed
+- Runs at full speed: the CPU clock is set by itself for each device, 1800 MHz on the Miyoo Mini
+  Plus and 1600 MHz on the other Mini models (see [CPU clock](#cpu-clock))
 - Software rendering (the Miyoo Mini Plus has no 3D GPU)
 - A full control scheme adapted for the Miyoo Mini Plus' hardware, which has no analog sticks
   (see [Controls](#controls))
@@ -143,8 +144,20 @@ of the screen, drawn by the game itself (OnionOS's own icon flickers over the ga
 "exit at" level (default 4 %) the game saves as for a power off and OnionOS turns the device off.
 Both levels, and turning them off, follow OnionOS's battery settings.
 
+## CPU clock
+
+At startup, under OnionOS, the game sets the CPU clock with OnionOS's own `cpuclock` tool, by
+device: **1800 MHz on the Miyoo Mini Plus** and **1600 MHz on the other models** (Mini, Mini V4,
+Mini Flip), which do not hold 1800 MHz. The model is read from what OnionOS writes in
+`/tmp/deviceModel` (and the screen size), and any device the game does not recognize gets 1600
+MHz. It is set once, when the game opens; there is no option to change it.
+
 ## Changelog
 
+- **v1.3.1** — Hotfix: the CPU clock is now set automatically for the device model, 1800 MHz on
+  the Miyoo Mini Plus and 1600 MHz on the other Mini models, so the game runs smoother without
+  the other models freezing on a clock they do not hold. Everything from v1.3.0 is included
+  (see below).
 - **v1.3.0** — The Menu key now opens the OnionOS Game Switcher (and does what *Tweaks >
   Shortcuts* sets for a long and double press): the game is saved first, with the screen picture
   the Game Switcher shows, and opening it again from there loads the save. Select, clicked
