@@ -340,9 +340,12 @@ The final ARM (armhf) binary `fallout-ce` will be in `build/`.
 
 ## License
 
-This port's source code follows the same license as fallout1-ce: the **Sustainable Use License**
-(see `LICENSE.md`). Use and distribution are free for non-commercial purposes, provided the
-original copyright notices are kept intact.
+This port is based on fallout1-ce, which is under the **Sustainable Use License** (see `LICENSE.md`): use
+and distribution are free for non-commercial purposes, provided the original copyright notices are kept intact.
+That covers the program as a whole and the changes made for the Miyoo Mini inside its files.
+
+The files written from scratch for this port are also available under the MIT License (see `LICENSE-MIT`):
+`src/miyoo_shutdown.cc`, `src/miyoo_shutdown.h` and `toolchain-miyoomini.cmake`.
 
 ## AI-Assisted
 
