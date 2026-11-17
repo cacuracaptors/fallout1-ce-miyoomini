@@ -154,6 +154,10 @@ MHz. It is set once, when the game opens; there is no option to change it.
 
 ## Changelog
 
+- **v1.3.2** — The game now ignores the screen size in `f1_res.ini`, a file that some PC
+  installations and mods include. It is set up for a PC screen and could stop the game from
+  starting, but this handheld's screen is always 640x480. Same fix as in Fallout 2 v1.3.2, where
+  these PC screen settings stopped the game from starting with the Restoration Project.
 - **v1.3.1** — Hotfix: the CPU clock is now set automatically for the device model, 1800 MHz on
   the Miyoo Mini Plus and 1600 MHz on the other Mini models, so the game runs smoother without
   the other models freezing on a clock they do not hold. Everything from v1.3.0 is included
